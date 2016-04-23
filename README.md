@@ -49,3 +49,8 @@ reading incoming test reports and summarizing into the database tables.
 This directory contains configuration files and templates which are
 deployed to the servers.
 
+### `dist/`
+
+The application distributions. These are synced from the source by a Rex
+task, and are not included in this repository.
+
