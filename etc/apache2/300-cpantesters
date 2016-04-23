@@ -1,0 +1,150 @@
+#NameVirtualHost 212.110.173.51
+
+<VirtualHost 212.110.173.51:80>
+    ServerName cpan.cpantesters.org
+    ServerAdmin barbie@missbarbell.co.uk
+    DocumentRoot /home/ftp/CPAN
+    <Directory /home/ftp/CPAN>
+        Options +Indexes
+        Require all granted
+    </Directory>
+    ErrorLog /var/www/logs/cpan-error.log
+    CustomLog /var/www/logs/cpan-access.log combined
+</VirtualHost>
+
+<VirtualHost 212.110.173.51:80>
+    ServerName backpan.cpantesters.org
+    ServerAdmin barbie@missbarbell.co.uk
+    DocumentRoot /home/ftp/BACKPAN
+    <Directory /home/ftp/BACKPAN>
+        Options +Indexes
+        Require all granted
+    </Directory>
+    ErrorLog /var/www/logs/backpan-error.log
+    CustomLog /var/www/logs/backpan-access.log combined
+</VirtualHost>
+
+<VirtualHost 212.110.173.51:80>
+    ServerName pass.cpantesters.org
+    ServerAdmin barbie@missbarbell.co.uk
+    DocumentRoot /var/www/reports/html/stats
+    ErrorLog /var/www/logs/cpanpass-error.log
+    CustomLog /var/www/logs/cpanpass-access.log combined
+</VirtualHost>
+
+<VirtualHost 212.110.173.51:80>
+    ServerName stats.cpantesters.org
+    ServerAdmin barbie@missbarbell.co.uk
+    DocumentRoot /var/www/cpanstats
+    ScriptAlias /cgi-bin/                /var/www/cpanstats/cgi-bin/
+    Options +ExecCGI
+    ErrorLog /var/www/logs/cpanstats-error.log
+    CustomLog /var/www/logs/cpanstats-access.log combined
+</VirtualHost>
+
+<VirtualHost 212.110.173.51:80>
+    ServerName devel.cpantesters.org
+    ServerAdmin barbie@missbarbell.co.uk
+    DocumentRoot /var/www/cpandevel
+    ErrorLog /var/www/logs/cpandevel-error.log
+    CustomLog /var/www/logs/cpandevel-access.log combined
+</VirtualHost>
+
+<VirtualHost 212.110.173.51:80>
+    ServerName prefs.cpantesters.org
+    ServerAdmin barbie@missbarbell.co.uk
+
+    RedirectMatch permanent .* https://prefs.cpantesters.org
+
+    ErrorLog /var/www/logs/cpanprefs-error.log
+    CustomLog /var/www/logs/cpanprefs-access.log combined
+</VirtualHost>
+
+<VirtualHost 212.110.173.51:80>
+    ServerName admin.cpantesters.org
+    ServerAdmin barbie@missbarbell.co.uk
+    DocumentRoot /var/www/cpanadmin/html
+
+    RewriteEngine on
+    RewriteRule ^(.*)$		https://admin.cpantesters.org$1 [L,R=301]
+</VirtualHost>
+
+<VirtualHost 212.110.173.51:80>
+    ServerName static.cpantesters.org
+    ServerAlias cpantesters.net www.cpantesters.net *.cpantesters.net
+    ServerAlias cpantesters.com www.cpantesters.com *.cpantesters.com
+    ServerAdmin barbie@missbarbell.co.uk
+    DocumentRoot /var/www/reports/html/static
+
+    RewriteEngine on
+    RewriteRule (aspx?|php)$                    /404.html [L,R=404]
+    RewriteRule (fckeditor)                     /404.html [L,R=404]
+
+    ErrorLog /var/www/logs/static-error.log
+    CustomLog /var/www/logs/static-access.log combined
+</VirtualHost>
+
+<VirtualHost 212.110.173.51:80>
+    ServerName reports.cpantesters.org
+    ServerAlias www.cpantesters.org cpantesters.org
+    ServerAlias *.cpantesters.org reports.grango.org
+    ServerAdmin barbie@missbarbell.co.uk
+    DocumentRoot /var/www/reports/html
+
+    ErrorLog /var/www/logs/downtime-error.log
+    #RewriteLog "/var/www/logs/rewrite.log"
+    #RewriteLogLevel 3
+
+    RewriteEngine on
+    RewriteRule ^.*(asp|php)$                   /cgi-bin/pages.cgi?act=error-badcmd [L,R=404]
+    RewriteRule (fckeditor)                     /cgi-bin/pages.cgi?act=error-badcmd [L,R=404]
+
+    RewriteRule ^/(show|dist|distro|author)/?$  / [R=301]
+    RewriteRule ^/show/(\w)(.*)$                /distro/$1/$1$2 [R=301]
+    RewriteRule ^/author/(\w)(\w.*)$            /author/$1/$1$2 [R=301]
+
+    RewriteRule ^/?$                            		/cgi-bin/pages.cgi?act=home-main [PT]
+    RewriteRule ^/index.html$                   		/cgi-bin/pages.cgi?act=home-main [PT]
+    RewriteRule ^/home/(\w+)(.html)?$           		/cgi-bin/pages.cgi?act=home-$1 [PT]
+    RewriteRule ^/user/(\w+)(.html)?$           		/cgi-bin/pages.cgi?act=user-$1 [PT]
+    RewriteRule ^/page/(\w+)(.html)?$           		/cgi-bin/pages.cgi?act=arts-item&name=$1 [PT]
+    RewriteRule ^/cpan/report/([-0-9-Za-z]+)$   		/cgi-bin/view-report.cgi?id=$1&%{QUERY_STRING} [PT]
+
+    RewriteRule ^/author/([A-Za-z])/?$          		/cgi-bin/pages.cgi?act=cpan-authors&name=$1 [PT]
+    RewriteRule ^/(?:static/)?author/[A-Za-z]/([-\w.]+)\.rss$   /cgi-bin/pages.cgi?act=cpan-arss&name=$1 [PT]
+    RewriteRule ^/(?:static/)?author/[A-Za-z]/([-\w.]+)\.ya?ml$ /cgi-bin/pages.cgi?act=cpan-ayml&name=$1 [PT]
+    RewriteRule ^/(author/[A-Za-z]/[-\w.]+\.(json|js))$         /static/$1 [PT]
+    RewriteRule ^/author/[A-Za-z]/([-\w.]+)\.html$              /cgi-bin/pages.cgi?act=cpan-author&name=$1 [PT]
+    RewriteRule ^/author/[A-Za-z]/([-\w.]+)$                    /cgi-bin/pages.cgi?act=cpan-author&name=$1 [PT]
+
+    RewriteRule ^/distro/([A-Za-z])/?$                          /cgi-bin/pages.cgi?act=cpan-distros&name=$1 [PT]
+    RewriteRule ^/(?:static/)?distro/[A-Za-z]/([-\w.]+)\.rss$   /cgi-bin/pages.cgi?act=cpan-drss&name=$1 [PT]
+    RewriteRule ^/(?:static/)?distro/[A-Za-z]/([-\w.]+)\.ya?ml$ /cgi-bin/pages.cgi?act=cpan-dyml&name=$1 [PT]
+    RewriteRule ^/(distro/[A-Za-z]/[-\w.]+\.(json|js))$         /static/$1 [PT]
+    RewriteRule ^/distro/[A-Za-z]/([-\w.]+)\.html$              /cgi-bin/pages.cgi?act=cpan-distro&name=$1 [PT]
+    RewriteRule ^/distro/[A-Za-z]/([-\w.]+)$                    /cgi-bin/pages.cgi?act=cpan-distro&name=$1 [PT]
+
+    RewriteRule ^/cgi-bin/pages.cgi$            		/cgi-bin/pages.cgi?%{QUERY_STRING} [PT]
+    RewriteRule ^/cgi-bin/reports-summary.cgi$  		/cgi-bin/reports-summary.cgi?%{QUERY_STRING} [PT]
+    RewriteRule ^/cgi-bin/reports-metadata.cgi$  		/cgi-bin/reports-metadata.cgi?%{QUERY_STRING} [PT]
+    RewriteRule ^/cgi-bin/summary.cgi$  			/cgi-bin/summary.cgi?%{QUERY_STRING} [PT]
+    RewriteRule ^/cgi-bin/(.*)$                 		/cgi-bin/pages.cgi?act=error-badcmd [PT]
+
+    ScriptAlias /cgi-bin/pages.cgi      /var/www/reports/cgi-bin/reports.cgi
+    ScriptAlias /cgi-bin/               /var/www/reports/cgi-bin/
+    #Options +ExecCGI
+
+    ErrorLog /var/www/logs/reports-error.log
+    CustomLog /var/www/logs/reports-access.log combined
+</VirtualHost>
+
+<VirtualHost 212.110.173.51:80>
+    ServerName test.cpantesters.org
+    ServerAlias *.cpantesters.org
+    ServerAdmin barbie@missbarbell.co.uk
+    DocumentRoot /var/www/downtime
+
+    ErrorLog /var/www/logs/downtime-error.log
+    CustomLog /var/www/logs/downtime-access.log combined
+</VirtualHost>
+

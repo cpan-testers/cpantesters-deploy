@@ -39,10 +39,10 @@ use. There are also APIs available from the web frontend.
 CPANTesters is managed with [Rex](http://rexify.org). The `Rexfile`
 contains the main routines for the CPANTesters deploy processes.
 
-### `cmdb/`
+### `backend/`
 
-This directory contains configuration for Rex: the Configuration
-Management DataBase.
+This directory contains the scripts that maintain the CPANTesters data,
+reading incoming test reports and summarizing into the database tables.
 
 ### `etc/`
 
