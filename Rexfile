@@ -171,5 +171,6 @@ sub ensure_sudo_password {
     ReadMode('noecho');
     sudo_password ReadLine(0);
     ReadMode('restore');
+    print "\n";
 }
 
