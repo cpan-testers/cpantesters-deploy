@@ -167,6 +167,8 @@ task deploy_www =>
             my $lversion = $labyrinth_version{ $dist };
             Rex::Logger::info( "Installing Labyrinth $lversion" );
             run "cpanm -l /tmp/dist/$dist/cgi-bin/lib Labyrinth\@$lversion";
+            Rex::Logger::info( "Installing Labyrinth::Plugin::Core $lversion" );
+            run "cpanm -l /tmp/dist/$dist/cgi-bin/lib Labyrinth::Plugin::Core\@5.19";
 
             Rex::Logger::info( "Diffing: $dist" );
             my $diff = scalar run "diff -ur $root/$dist /tmp/dist/$dist";
