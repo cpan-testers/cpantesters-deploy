@@ -8,6 +8,12 @@ date_format="%Y/%m/%d %H:%M:%S"
 
 cd $BASE
 
+clean_backup() {
+    PREFIX=$1
+    # Remove the previous backup, leaving 2
+    perl -E'@f = sort glob($ARGV[0] . "*.sql*"); @r = splice @f, 0, -2; unlink for @r' $PREFIX
+}
+
 if [ -f $LOCK ]
 then
     echo `date +"$date_format"` "Backup 1 already running" >>$LOG
@@ -20,20 +26,26 @@ else
 
     cd $BASE/dbx
 
+    clean_backup metabase-email-backup
     mysqldump -u barbie --skip-add-locks --add-drop-table --skip-disable-keys --skip-extended-insert metabase testers_email | bzip2 >metabase-email-backup-$DATE.sql
 
+    clean_backup testers-backup
     mysqldump -u barbie --skip-add-locks --add-drop-table --skip-disable-keys --skip-extended-insert testers | bzip2 >testers-backup-$DATE.sql
 
+    clean_backup cpanstats-backup
     mysqldump -u barbie --skip-add-locks --add-drop-table --skip-disable-keys --skip-extended-insert cpanstats >cpanstats-backup-$DATE.sql
     bzip2 cpanstats-backup-$DATE.sql
 
     # The previous two millions
+    clean_backup metabase-66m-backup
     mysqldump -u barbie --skip-add-locks --where="id>65000000 AND id<=66000000" --skip-disable-keys --skip-extended-insert metabase metabase >metabase-66m-backup-$DATE.sql
     bzip2 metabase-66m-backup-$DATE.sql
+    clean_backup metabase-67m-backup
     mysqldump -u barbie --skip-add-locks --where="id>66000000 AND id<=67000000" --skip-disable-keys --skip-extended-insert metabase metabase >metabase-67m-backup-$DATE.sql
     bzip2 metabase-67m-backup-$DATE.sql
 
     # The current million
+    clean_backup metabase-backup
     mysqldump -u barbie --skip-add-locks  --where="id>67000000" --skip-disable-keys --skip-extended-insert metabase metabase >metabase-backup-$DATE.sql
     bzip2 metabase-backup-$DATE.sql
 
