@@ -37,16 +37,16 @@ else
     bzip2 cpanstats-backup-$DATE.sql
 
     # The previous two millions
-    clean_backup metabase-66m-backup
-    mysqldump -u barbie --skip-add-locks --where="id>65000000 AND id<=66000000" --skip-disable-keys --skip-extended-insert metabase metabase >metabase-66m-backup-$DATE.sql
-    bzip2 metabase-66m-backup-$DATE.sql
     clean_backup metabase-67m-backup
     mysqldump -u barbie --skip-add-locks --where="id>66000000 AND id<=67000000" --skip-disable-keys --skip-extended-insert metabase metabase >metabase-67m-backup-$DATE.sql
     bzip2 metabase-67m-backup-$DATE.sql
+    clean_backup metabase-68m-backup
+    mysqldump -u barbie --skip-add-locks --where="id>67000000 AND id<=68000000" --skip-disable-keys --skip-extended-insert metabase metabase >metabase-68m-backup-$DATE.sql
+    bzip2 metabase-68m-backup-$DATE.sql
 
     # The current million
     clean_backup metabase-backup
-    mysqldump -u barbie --skip-add-locks  --where="id>67000000" --skip-disable-keys --skip-extended-insert metabase metabase >metabase-backup-$DATE.sql
+    mysqldump -u barbie --skip-add-locks  --where="id>68000000" --skip-disable-keys --skip-extended-insert metabase metabase >metabase-backup-$DATE.sql
     bzip2 metabase-backup-$DATE.sql
 
     #cp ../db/cpanstats.db cpanstats-$DATE.db
