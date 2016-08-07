@@ -8,6 +8,10 @@
         Options +Indexes
         Require all granted
     </Directory>
+
+    # Disable CGI scripts
+    RemoveHandler .cgi .pl
+
     ErrorLog /var/www/logs/cpan-error.log
     CustomLog /var/www/logs/cpan-access.log combined
 </VirtualHost>
@@ -20,6 +24,10 @@
         Options +Indexes
         Require all granted
     </Directory>
+
+    # Disable CGI scripts
+    RemoveHandler .cgi .pl
+
     ErrorLog /var/www/logs/backpan-error.log
     CustomLog /var/www/logs/backpan-access.log combined
 </VirtualHost>
