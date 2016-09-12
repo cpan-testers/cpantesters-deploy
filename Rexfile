@@ -6,10 +6,12 @@ use Term::ReadKey;
 group www => 'cpantesters3.dh.bytemark.co.uk';
 group backend => 'cpantesters3.dh.bytemark.co.uk';
 group db => 'cpantesters3.dh.bytemark.co.uk';
+group monitor => 'monitor.preaction.me';
 
 set backend_root_dir => '/media/backend/cpantesters';
 set www_root_dir => '/var/www';
 set db_root_dir => '/media/backend/mysql';
+set monitor_root_dir => '/var/icinga';
 
 set common_packages => [ qw/
     build-essential git perl-doc perl vim logrotate ack-grep cpanminus
@@ -17,6 +19,7 @@ set common_packages => [ qw/
 set www_packages => [qw/ apache2 mysql-client /];
 set backend_packages => [qw/ mysql-client libdbd-mysql-perl postfix rsync-daemon proftpd /];
 set db_packages => [qw/ mysql-server mysql-client libdbd-mysql-perl /];
+set monitor_packages => [qw/ icinga2-web icinga2 icinga2-ido-mysql mariadb-server apache-httpd php-7.0.8p0 php-pdo_mysql-7.0.8p0 /];
 
 set backend_repo_map => {
     cpandevel => 'CPAN::Testers::WWW::Development',
@@ -228,6 +231,43 @@ task deploy_db =>
                 ;
 
             service mysqld => ensure => 'started';
+        };
+    };
+
+desc 'Deploy the monitoring server';
+task deploy_monitor =>
+    group => 'monitor',
+    sub {
+        ensure_sudo_password();
+        # Install packages
+        sudo sub {
+            run 'mkdir -p ' . get 'monitor_root_dir';
+            run 'chown -R _icinga:_icinga ' . get 'monitor_root_dir';
+            run 'mkdir -p /var/mysql';
+            run 'chown -R _mysql:_mysql /var/mysql';
+            run 'mkdir -p /var/www/etc/icingaweb2';
+            run 'rcctl enable apache2';
+            run 'rcctl enable icinga2';
+            run 'rcctl enable mysqld';
+            run 'icinga2 feature enable ido-mysql';
+            run 'icinga2 feature enable command';
+            run 'icingacli setup token create';
+            run 'mysqladmin -u root password root';
+            run 'mysqladmin -u root createdb icinga';
+            run 'mysql -u root -p icinga < /usr/local/share/icinga2-ido-mysql/schema/mysql.sql';
+            run 'cp /var/www/conf/modules{.sample,}/php-7.0.conf';
+            run 'chmod -R ugo+rw /var/www/etc/icingaweb2';
+            # /etc/apache2/httpd2.conf
+            # LoadModule mod_rewrite.so
+            #   Needed for icingaweb2 to remove "index.php" from paths
+            # Include /etc/apache2/vhost/*.conf
+            #   Needed to load vhost configs
+            # /etc/fstab / wxallowed
+            #   Needed for php to work on newer OpenBSD
+            # /etc/php-7.0.ini pdo_mysql.so
+            #   Load PDO mysql
+            run 'rcctl restart apache2';
+            run 'rcctl restart icinga2';
         };
     };
 
