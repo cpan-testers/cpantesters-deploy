@@ -174,10 +174,12 @@ task deploy_www_config =>
         Rex::Logger::info( "Deploying httpd configs" );
         sudo sub {
             Rex::Logger::info( "Syncing apache configs" );
-            sync_up 'etc/apache2/conf', '/etc/apache2/conf-available';
-            run 'a2enconf ' . $_ for qw( log );
+            #sync_up 'etc/apache2/conf', '/etc/apache2/conf-available';
+            #run 'a2enconf ' . $_ for qw( log );
             sync_up 'etc/apache2/vhost', '/etc/apache2/sites-available';
             run 'a2ensite ' . $_ for qw( 100-perl.org 300-cpantesters 443-cpantesters );
+            Rex::Logger::info( 'Enabling apache modules' );
+            run 'a2enmod ' . $_ for qw( remoteip );
             Rex::Logger::info( "Restarting apache service" );
             service apache2 => 'restart';
         };
