@@ -160,6 +160,29 @@ task deploy_backend =>
         };
     };
 
+desc 'Deploy the CPANTesters web config';
+task deploy_www_config =>
+    group => [qw( www )],
+    sub {
+        ensure_sudo_password();
+
+        Rex::Logger::info( "Checking www packages" );
+        sudo sub {
+            install package => $_ for @{ get 'www_packages' };
+        };
+
+        Rex::Logger::info( "Deploying httpd configs" );
+        sudo sub {
+            Rex::Logger::info( "Syncing apache configs" );
+            sync 'etc/apache2/conf', '/etc/apache2/conf-available';
+            run 'a2enconf ' . $_ for qw( log );
+            sync 'etc/apache2/vhost', '/etc/apache2/sites-available';
+            run 'a2ensite ' . $_ for qw( 100-perl.org 300-cpantesters 443-cpantesters );
+            Rex::Logger::info( "Restarting apache service" );
+            service apache2 => 'restart';
+        };
+    };
+
 desc 'Deploy the CPANTesters web app';
 task deploy_www =>
     group => [qw( www )],
@@ -168,11 +191,6 @@ task deploy_www =>
         my %dist = %{ get 'www_repo_map' };
 
         ensure_sudo_password();
-
-        Rex::Logger::info( "Checking www packages" );
-        sudo sub {
-            install package => $_ for @{ get 'www_packages' };
-        };
 
         Rex::Logger::info( "Updating web app distributions" );
         for my $dist ( keys %dist ) {
@@ -226,19 +244,6 @@ task deploy_www =>
                 Rex::Logger::info( "Skipping $dist due to user input" );
             }
         }
-
-        return;
-
-        Rex::Logger::info( "Deploying httpd configs" );
-        sudo sub {
-            Rex::Logger::info( "Syncing apache configs" );
-            sync 'etc/apache2/conf', '/etc/apache2/conf-available';
-            run 'a2enconf ' . $_ for qw( log );
-            sync 'etc/apache2/vhost', '/etc/apache2/sites-available';
-            run 'a2ensite ' . $_ for qw( 100-perl.org 300-cpantesters 443-cpantesters );
-            Rex::Logger::info( "Checking apache service" );
-            service apache2 => ensure => 'started';
-        };
     };
 
 desc 'Deploy the CPANTesters database';
