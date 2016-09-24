@@ -1,13 +1,37 @@
 
+=head1 NAME
+
+Rexfile - Rex task configuration for CPANTesters
+
+=head1 SYNOPSIS
+
+    # Deploy web server configuration
+    rex deploy_www_config
+
+=head1 DESCRIPTION
+
+This file defines all the L<Rex|http://rexify.org> tasks used to deploy
+and configure the CPANTesters servers.
+
+=head1 SEE ALSO
+
+L<Rex|http://rexify.org>
+
+=cut
+
 use Rex -feature => [ 1.4 ];
 use Rex::Commands::Rsync;
 use Term::ReadKey;
 
+#######################################################################
+# Groups
 group www => 'cpantesters3.dh.bytemark.co.uk';
 group backend => 'cpantesters3.dh.bytemark.co.uk';
 group db => 'cpantesters3.dh.bytemark.co.uk';
 group monitor => 'monitor.preaction.me';
 
+#######################################################################
+# Settings
 set backend_root_dir => '/media/backend/cpantesters';
 set www_root_dir => '/var/www';
 set db_root_dir => '/media/backend/mysql';
@@ -60,12 +84,17 @@ set www_dirs => {
     reports     => '/media/web/www/reports/html',
 };
 
+#######################################################################
+# Environments
 # The Vagrant VM for development purposes
 environment vm => sub {
     group www => ''; # the Vagrant VM IP
     group backend => ''; # the Vagrant VM IP
     group db => ''; # the Vagrant VM IP
 };
+
+#######################################################################
+# Tasks
 
 desc 'Prepare the machine for a CPANTesters role by installing OS packages';
 task prepare =>
@@ -272,6 +301,9 @@ task deploy_monitor =>
             run 'rcctl restart icinga2';
         };
     };
+
+#######################################################################
+# Subroutines
 
 sub ensure_sudo_password {
     return if sudo_password();
