@@ -20,7 +20,7 @@ L<Rex|http://rexify.org>
 =cut
 
 use Rex -feature => [ 1.4 ];
-use Rex::Commands::Rsync;
+use Rex::Commands::Sync;
 use Term::ReadKey;
 
 #######################################################################
@@ -133,7 +133,7 @@ task deploy_backend =>
 
         Rex::Logger::info( "Deploying backend scripts" );
         sudo sub {
-            sync 'backend/*', $root;
+            sync_up 'backend/*', $root;
         };
 
         Rex::Logger::info( "Deploying crontabs" );
@@ -174,9 +174,9 @@ task deploy_www_config =>
         Rex::Logger::info( "Deploying httpd configs" );
         sudo sub {
             Rex::Logger::info( "Syncing apache configs" );
-            sync 'etc/apache2/conf', '/etc/apache2/conf-available';
+            sync_up 'etc/apache2/conf', '/etc/apache2/conf-available';
             run 'a2enconf ' . $_ for qw( log );
-            sync 'etc/apache2/vhost', '/etc/apache2/sites-available';
+            sync_up 'etc/apache2/vhost', '/etc/apache2/sites-available';
             run 'a2ensite ' . $_ for qw( 100-perl.org 300-cpantesters 443-cpantesters );
             Rex::Logger::info( "Restarting apache service" );
             service apache2 => 'restart';
@@ -210,9 +210,9 @@ task deploy_www =>
         for my $dist ( keys %dist ) {
             Rex::Logger::info( "Staging: $dist" );
             run "mkdir -p /tmp/dist/$dist";
-            sync "dist/$dist/vhost/.", "/tmp/dist/$dist/.";
+            sync_up "dist/$dist/vhost/.", "/tmp/dist/$dist/.";
             run "mkdir -p /tmp/dist/$dist/cgi-bin/lib";
-            sync "dist/$dist/lib/.", "/tmp/dist/$dist/cgi-bin/lib/.";
+            sync_up "dist/$dist/lib/.", "/tmp/dist/$dist/cgi-bin/lib/.";
 
             my $lversion = $labyrinth_version{ $dist };
             Rex::Logger::info( "Installing Labyrinth $lversion" );
