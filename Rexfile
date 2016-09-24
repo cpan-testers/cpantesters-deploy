@@ -203,7 +203,9 @@ task deploy_www =>
         Rex::Logger::info( "Deploying httpd configs" );
         sudo sub {
             Rex::Logger::info( "Syncing apache configs" );
-            sync 'etc/apache2', '/etc/apache2/sites-available';
+            sync 'etc/apache2/conf', '/etc/apache2/conf-available';
+            run 'a2enconf ' . $_ for qw( log );
+            sync 'etc/apache2/vhost', '/etc/apache2/sites-available';
             run 'a2ensite ' . $_ for qw( 100-perl.org 300-cpantesters 443-cpantesters );
             Rex::Logger::info( "Checking apache service" );
             service apache2 => ensure => 'started';
