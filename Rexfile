@@ -22,6 +22,7 @@ L<Rex|http://rexify.org>
 use Rex -feature => [ 1.4 ];
 use Rex::Commands::Sync;
 use Term::ReadKey;
+use File::Basename qw( basename );
 
 #######################################################################
 # Groups
@@ -83,6 +84,13 @@ set www_dirs => {
     static      => '/media/web/www/reports/html/static',
     reports     => '/media/web/www/reports/html',
 };
+
+set www_app_config_files => [qw(
+    perl.org.conf
+    cpantesters.org.conf
+)];
+
+set www_maintenance_config_file => '000-maintenance.conf';
 
 #######################################################################
 # Environments
@@ -176,8 +184,12 @@ task deploy_www_config =>
             Rex::Logger::info( "Syncing apache configs" );
             #sync_up 'etc/apache2/conf', '/etc/apache2/conf-available';
             #run 'a2enconf ' . $_ for qw( log );
+            run 'a2dissite ' . $_ for split ' ', run 'ls -l /etc/apache2/sites-available';
             sync_up 'etc/apache2/vhost', '/etc/apache2/sites-available';
-            run 'a2ensite ' . $_ for qw( 100-perl.org 300-cpantesters 443-cpantesters );
+            run 'a2ensite ' . $_
+                for grep { $_ ne get 'www_maintenance_config_file' }
+                    map basename,
+                    glob 'etc/apache2/vhost/*';
             Rex::Logger::info( 'Enabling apache modules' );
             run 'a2enmod ' . $_ for qw( remoteip );
             Rex::Logger::info( "Restarting apache service" );
@@ -335,6 +347,41 @@ task deploy_monitor =>
             run 'rcctl restart apache2';
             run 'rcctl restart icinga2';
         };
+    };
+
+desc 'Start maintenance mode';
+task 'start_maintenance' =>
+    group => [qw( www )],
+    sub {
+        ensure_sudo_password();
+        sudo sub {
+            Rex::Logger::info( 'Syncing maintenance site' );
+            run 'mkdir -p /var/www/maintenance';
+            sync_up 'var/www/maintenance', '/var/www/maintenance';
+            Rex::Logger::info( 'Disabling app sites' );
+            run 'a2dissite ' . $_ for @{ get 'www_app_config_files' };
+            Rex::Logger::info( 'Enabling maintenance site' );
+            run 'a2ensite ' . get 'www_maintenance_config_file';
+            Rex::Logger::info( 'Restarting apache' );
+            service apache2 => 'reload';
+            # XXX: Purge the Fastly cache
+        }
+    };
+
+desc 'Stop maintenance mode';
+task 'stop_maintenance' =>
+    group => [qw( www )],
+    sub {
+        ensure_sudo_password();
+        sudo sub {
+            Rex::Logger::info( 'Enabling app sites' );
+            run 'a2ensite ' . $_ for @{ get 'www_app_config_files' };
+            Rex::Logger::info( 'Disabling maintenance site' );
+            run 'a2dissite ' . get 'www_maintenance_config_file';
+            Rex::Logger::info( 'Restarting apache' );
+            service apache2 => 'reload';
+            # XXX: Purge the Fastly cache
+        }
     };
 
 #######################################################################
