@@ -304,6 +304,34 @@ task deploy_monitor =>
             #   Needed for php to work on newer OpenBSD
             # /etc/php-7.0.ini pdo_mysql.so
             #   Load PDO mysql
+
+            ### Distributed monitoring
+            # http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/distributed-monitoring#distributed-monitoring-automation
+            # Set up monitor master
+            run 'icinga2 node setup --master';
+            # Cert gets made in /etc/icinga2/pki/ca.crt to copy to client
+
+            # Set up monitor clients
+            # $ apt-get install icinga2
+            # $ icinga2 feature enable api
+            # $ mkdir -p /etc/icinga2/pki
+            # $ chown -R icinga:icinga /etc/icinga2/pki
+            # $ icinga2 pki new-cert --cn <client-fqdn> \
+            # --key /etc/icinga2/pki/<client-fqdn>.key \
+            # --cert /etc/icinga2/pki/<client-fqdn>.cert
+            # Copy the trusted master certificate as /etc/icinga2/pki/master.crt
+            # $ icinga2 pki save-cert --key /etc/icinga2/pki/<client-fqdn>.key \
+            # --cert /etc/icinga2/pki/<client-fqdn>.crt \
+            # --trustedcert /etc/icinga2/pki/master.crt \
+            # --host <master-fqdn>
+            # $ icinga2 node setup --ticket <ticket> \
+            # --endpoint <master-fqdn> \
+            # --zone <client-fqdn> \
+            # --master_host <master-fqdn> \
+            # --trustedcert /etc/icinga2/pki/master.crt \
+            # --accept-config
+            # $ service icinga2 restart
+
             run 'rcctl restart apache2';
             run 'rcctl restart icinga2';
         };
