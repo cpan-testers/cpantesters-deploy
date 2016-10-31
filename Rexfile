@@ -172,6 +172,13 @@ desc 'Deploy the CPANTesters web config';
 task deploy_www_config =>
     group => [qw( www )],
     sub {
+        my @sites;
+        LOCAL {
+            @sites = grep { $_ ne get 'www_maintenance_config_file' }
+                map { basename $_ }
+                glob 'etc/apache2/vhost/*';
+        };
+
         ensure_sudo_password();
 
         Rex::Logger::info( "Checking www packages" );
@@ -186,10 +193,8 @@ task deploy_www_config =>
             #run 'a2enconf ' . $_ for qw( log );
             run 'a2dissite ' . $_ for split ' ', run 'ls -l /etc/apache2/sites-available';
             sync_up 'etc/apache2/vhost', '/etc/apache2/sites-available';
-            run 'a2ensite ' . $_
-                for grep { $_ ne get 'www_maintenance_config_file' }
-                    map basename,
-                    glob 'etc/apache2/vhost/*';
+            Rex::Logger::info( "Enabling sites: " . join " ", @sites );
+            run 'a2ensite ' . $_ for @sites;
             Rex::Logger::info( 'Enabling apache modules' );
             run 'a2enmod ' . $_ for qw( remoteip );
             Rex::Logger::info( "Restarting apache service" );
