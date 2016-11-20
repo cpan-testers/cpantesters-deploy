@@ -1,0 +1,4 @@
+
+source /opt/local/perlbrew/etc/bashrc
+eval $( perl -Mlocal::lib )
+

@@ -5,8 +5,11 @@ Rexfile - Rex task configuration for CPANTesters
 
 =head1 SYNOPSIS
 
-    # Deploy web server configuration
-    rex deploy_www_config
+    # Prepare an API server
+    rex prepare
+    rex prepare_api
+    rex prepare_perl
+    rex prepare_user
 
 =head1 DESCRIPTION
 
@@ -26,79 +29,28 @@ use File::Basename qw( basename );
 
 #######################################################################
 # Groups
-group www => 'cpantesters3.dh.bytemark.co.uk';
-group backend => 'cpantesters3.dh.bytemark.co.uk';
-group db => 'cpantesters3.dh.bytemark.co.uk';
-group monitor => 'monitor.preaction.me';
+group api => 'cpantesters3.dh.bytemark.co.uk';
 
 #######################################################################
 # Settings
-set backend_root_dir => '/media/backend/cpantesters';
-set www_root_dir => '/var/www';
-set db_root_dir => '/media/backend/mysql';
-set monitor_root_dir => '/var/icinga';
+
+set perl_version => '5.24.0';
+set perlbrew_root => '/opt/local/perlbrew';
 
 set common_packages => [ qw/
-    build-essential git perl-doc perl vim logrotate ack-grep cpanminus
+    build-essential git perl-doc perl vim logrotate ack-grep
 / ];
-set www_packages => [qw/ apache2 mysql-client /];
-set backend_packages => [qw/ mysql-client libdbd-mysql-perl postfix rsync-daemon proftpd /];
-set db_packages => [qw/ mysql-server mysql-client libdbd-mysql-perl /];
-set monitor_packages => [qw/ icinga2-web icinga2 icinga2-ido-mysql mariadb-server apache-httpd php-7.0.8p0 php-pdo_mysql-7.0.8p0 /];
-
-set backend_repo_map => {
-    cpandevel => 'CPAN::Testers::WWW::Development',
-    cpanstats => 'CPAN::Testers::WWW::Statistics',
-    'cpanstats-excel' => 'CPAN::Testers::WWW::Statistics::Excel',
-    generate => 'CPAN::Testers::Data::Generator',
-    'generate-mailer' => 'CPAN::Testers::WWW::Generator::Mailer',
-    release => 'CPAN::Testers::Data::Release',
-    'reports-mailer' => 'CPAN::Testers::WWW::Reports::Mailer',
-    uploads => 'CPAN::Testers::Data::Uploads',
-    'uploads-mailer' => 'CPAN::Testers::Data::Uploads::Mailer',
-};
-
-# Deploy a Labyrinth site by deploying the vhost/ directory as the root, then
-# deploying the lib/ directory inside the vhost/cgi-bin/ directory.
-
-set www_repo_map => {
-    cpanadmin => 'https://github.com/barbie/cpan-testers-www-admin.git',
-    cpanprefs => 'https://github.com/barbie/cpan-testers-www-preferences.git',
-    reports => 'https://github.com/barbie/cpan-testers-www-reports.git',
-};
-
-set www_labyrinth_version => {
-    reports => 5.32,
-    cpanadmin => 5.27,
-    cpanprefs => 5.00,
-};
-
-set www_dirs => {
-    cpan        => '/media/web/CPAN',
-    backpan     => '/media/web/BACKPAN',
-    pass        => '/media/web/www/reports/html/stats',
-    stats       => '/media/web/www/cpanstats',
-    devel       => '/media/web/www/cpandevel',
-    prefs       => '/media/web/www/cpanprefs/html',
-    admin       => '/media/web/www/cpanadmin/html',
-    static      => '/media/web/www/reports/html/static',
-    reports     => '/media/web/www/reports/html',
-};
-
-set www_app_config_files => [qw(
-    perl.org.conf
-    cpantesters.org.conf
-)];
-
-set www_maintenance_config_file => '000-maintenance.conf';
+set api_packages => [qw/ perlbrew libmysqlclient-dev /];
 
 #######################################################################
 # Environments
 # The Vagrant VM for development purposes
 environment vm => sub {
-    group www => ''; # the Vagrant VM IP
-    group backend => ''; # the Vagrant VM IP
-    group db => ''; # the Vagrant VM IP
+    group api => '192.168.127.127'; # the Vagrant VM IP
+    set 'no_sudo_password' => 1;
+    user 'vagrant';
+    # XXX: Does this only work with virtualbox?
+    private_key '.vagrant/machines/default/virtualbox/private_key';
 };
 
 #######################################################################
@@ -115,278 +67,97 @@ task prepare =>
         };
     };
 
-desc 'Deploy the CPANTesters backend';
-task deploy_backend =>
-    group => [qw( backend )],
+desc 'Prepare the machine to run the CPAN Testers API';
+task prepare_api =>
     sub {
-        my $root = get 'backend_root_dir';
-
         ensure_sudo_password();
 
-        Rex::Logger::info( "Checking backend packages" );
+        Rex::Logger::info( "Checking API packages" );
         sudo sub {
-            install package => $_ for @{ get 'backend_packages' };
-        };
-
-        Rex::Logger::info( "Deploying logrotate.conf" );
-        sudo sub {
-            file $root . '/etc',
-                ensure => 'directory';
-            file $root . '/etc/logrotate.conf',
-                source => './etc/logrotate.conf',
-                owner => 'root',
-                group => 'root',
-                ;
-        };
-
-        Rex::Logger::info( "Deploying backend scripts" );
-        sudo sub {
-            sync_up 'backend/*', $root;
-        };
-
-        Rex::Logger::info( "Deploying crontabs" );
-        sudo sub {
-            file '/tmp/deploy', ensure => 'directory';
-            file '/tmp/deploy/crontab-testers',
-                source => './etc/crontab/backend',
-                ;
-
-            Rex::Logger::info( "Checking crontab diff" );
-            run 'crontab -u barbie -l > /tmp/deploy/crontab-testers.previous';
-            my $diff = scalar run 'diff -u /tmp/deploy/crontab-testers.previous /tmp/deploy/crontab-testers';
-            if ( $? == 0 ) {
-                Rex::Logger::info( "No changes in crontab" );
-            }
-            elsif ( $? != 1 ) {
-                Rex::Logger::info( "Error running diff: $?" );
-            }
-            else {
-                say $diff;
-                Rex::Logger::info( "Updating crontab" );
-                say scalar run 'crontab -u barbie /tmp/deploy/crontab-testers';
-            }
+            install package => $_ for @{ get 'api_packages' };
         };
     };
 
-desc 'Deploy the CPANTesters web config';
-task deploy_www_config =>
-    group => [qw( www )],
+desc 'Deploy Perl to the server using perlbrew';
+task prepare_perl =>
     sub {
-        my @sites;
+        my $root = get 'perlbrew_root';
+        my $perl_version = get 'perl_version';
+        my %env = (
+            env => { PERLBREW_ROOT => $root }
+        );
+
+        ensure_sudo_password();
+
+        sudo sub {
+            pkg 'perlbrew', ensure => 'present';
+            file $root, ensure => 'directory';
+            run 'perlbrew init', %env;
+            Rex::Logger::info( 'Installing Perl ' . $perl_version );
+            run 'perlbrew install ' . $perl_version, %env;
+            run 'perlbrew install-cpanm', %env;
+            run 'perlbrew exec cpanm local::lib', %env;
+        };
+    };
+
+desc 'Set up a local cpantesters user';
+task prepare_user =>
+    sub {
+        my $ssh_key;
+        my $perl_version = get 'perl_version';
+        my $perlbrew_root = get 'perlbrew_root';
+
         LOCAL {
-            @sites = grep { $_ ne get 'www_maintenance_config_file' }
-                map { basename $_ }
-                glob 'etc/apache2/vhost/*';
+            if ( !-e glob '~/.ssh/cpantesters-rex' ) {
+                Rex::Logger::info( 'Generating new cpantesters-rex key in ~/.ssh' );
+                run 'ssh-keygen -q -N "" -t ecdsa -f ~/.ssh/cpantesters-rex';
+                run 'chmod go-rwx ~/.ssh/cpantesters-rex{,.pub}';
+            }
+            $ssh_key = cat '~/.ssh/cpantesters-rex.pub';
         };
 
         ensure_sudo_password();
-
-        Rex::Logger::info( "Checking www packages" );
         sudo sub {
-            install package => $_ for @{ get 'www_packages' };
-        };
+            account cpantesters =>
+                ensure => 'present',
+                comment => 'CPAN Testers application account',
+                crypt_password => '*', # Disable passwords
+                shell => '/bin/bash',
+                create_home => TRUE;
 
-        Rex::Logger::info( "Deploying httpd configs" );
-        sudo sub {
-            Rex::Logger::info( "Syncing apache configs" );
-            #sync_up 'etc/apache2/conf', '/etc/apache2/conf-available';
-            #run 'a2enconf ' . $_ for qw( log );
-            run 'a2dissite ' . $_ for split ' ', run 'ls -l /etc/apache2/sites-available';
-            sync_up 'etc/apache2/vhost', '/etc/apache2/sites-available';
-            Rex::Logger::info( "Enabling sites: " . join " ", @sites );
-            run 'a2ensite ' . $_ for @sites;
-            Rex::Logger::info( 'Enabling apache modules' );
-            run 'a2enmod ' . $_ for qw( remoteip );
-            Rex::Logger::info( "Restarting apache service" );
-            service apache2 => 'restart';
-        };
-    };
-
-desc 'Deploy the CPANTesters web app';
-task deploy_www =>
-    group => [qw( www )],
-    sub {
-        my $root = get 'www_root_dir';
-        my %dist = %{ get 'www_repo_map' };
-
-        ensure_sudo_password();
-
-        Rex::Logger::info( "Updating web app distributions" );
-        for my $dist ( keys %dist ) {
-            LOCAL {
-                run 'mkdir -p dist';
-                if ( -d "dist/$dist" ) {
-                    run "cd dist/$dist && git pull";
-                }
-                else {
-                    run "cd dist && git clone --depth 1 $dist{$dist} $dist";
-                }
-            }
-        }
-
-        Rex::Logger::info( "Deploying web app distributions" );
-        my %labyrinth_version = %{ get 'www_labyrinth_version' };
-        for my $dist ( keys %dist ) {
-            Rex::Logger::info( "Staging: $dist" );
-            run "mkdir -p /tmp/dist/$dist";
-            sync_up "dist/$dist/vhost/.", "/tmp/dist/$dist/.";
-            run "mkdir -p /tmp/dist/$dist/cgi-bin/lib";
-            sync_up "dist/$dist/lib/.", "/tmp/dist/$dist/cgi-bin/lib/.";
-
-            my $lversion = $labyrinth_version{ $dist };
-            Rex::Logger::info( "Installing Labyrinth $lversion" );
-            run "cpanm -l /tmp/dist/$dist/cgi-bin/lib Labyrinth\@$lversion";
-            Rex::Logger::info( "Installing Labyrinth::Plugin::Core $lversion" );
-            run "cpanm -l /tmp/dist/$dist/cgi-bin/lib Labyrinth::Plugin::Core\@5.19";
-
-            Rex::Logger::info( "Diffing: $dist" );
-            my $diff = scalar run "diff -ur $root/$dist /tmp/dist/$dist";
-            if ( $? == 0 ) {
-                Rex::Logger::info( "No changes in dist. Skipping." );
-                next;
-            }
-            elsif ( $? != 1 ) {
-                Rex::Logger::info( "Error running diff: $?. Skipping." );
-                next;
-            }
-
-            say $diff;
-            print "Install this dist? (Y/n): ";
-            my $install = ReadLine(0);
-            print "\n";
-
-            if ( lc $install =~ /^y?\n$/ ) {
-                Rex::Logger::info( "Installing: $dist" );
-                #run "rsync -av /tmp/dist/$dist $root/$dist";
-            }
-            else {
-                Rex::Logger::info( "Skipping $dist due to user input" );
-            }
-        }
-    };
-
-desc 'Deploy the CPANTesters database';
-task deploy_db =>
-    sub {
-        ensure_sudo_password();
-
-        Rex::Logger::info( "Checking DB packages" );
-        sudo sub {
-            install package => $_ for @{ get 'db_packages' };
-        };
-
-        Rex::Logger::info( "Checking mysqld service" );
-        sudo sub {
-            my %mysql_vars = (
-                datadir => get( 'db_root_dir' ),
-            );
-
-            file '/etc/mysql/my.cnf',
-                content => template( 'etc/mysql/my.cnf', %mysql_vars ),
+            Rex::Logger::info( 'Appending your cpantesters-rex ssh key' );
+            file '/home/cpantesters/.ssh',
+                ensure => 'directory',
+                owner => 'cpantesters',
+                group => 'cpantesters',
+                mode => '700', # u+rwx go-rwx
+                ;
+            file '/home/cpantesters/.ssh/authorized_keys',
+                ensure => 'exists',
+                owner => 'cpantesters',
+                group => 'cpantesters',
+                mode => '700', # u+rwx go-rwx
                 ;
 
-            service mysqld => ensure => 'started';
+            append_if_no_such_line '/home/cpantesters/.ssh/authorized_keys',
+                $ssh_key;
+
+            Rex::Logger::info( 'Setting up user environment' );
+            file '/home/cpantesters/.profile',
+                source => 'home/profile';
+            file '/home/cpantesters/.bash_profile',
+                content => 'source ~/.profile';
+
+            Rex::Logger::info( 'Enabling Perl' );
+            run 'sudo -i -u cpantesters PERLBREW_ROOT=' . $perlbrew_root . ' perlbrew switch perl-' . $perl_version;
+
+            Rex::Logger::info( 'Adding database configuration' );
+            file '/home/cpantesters/.cpanstats.cnf',
+                owner => 'cpantesters',
+                group => 'cpantesters',
+                mode => '600',
+                source => 'etc/cpanstats.cnf';
         };
-    };
-
-desc 'Deploy the monitoring server';
-task deploy_monitor =>
-    group => 'monitor',
-    sub {
-        ensure_sudo_password();
-        # Install packages
-        sudo sub {
-            run 'mkdir -p ' . get 'monitor_root_dir';
-            run 'chown -R _icinga:_icinga ' . get 'monitor_root_dir';
-            run 'mkdir -p /var/mysql';
-            run 'chown -R _mysql:_mysql /var/mysql';
-            run 'mkdir -p /var/www/etc/icingaweb2';
-            run 'rcctl enable apache2';
-            run 'rcctl enable icinga2';
-            run 'rcctl enable mysqld';
-            run 'icinga2 feature enable ido-mysql';
-            run 'icinga2 feature enable command';
-            run 'icingacli setup token create';
-            run 'mysqladmin -u root password root';
-            run 'mysqladmin -u root createdb icinga';
-            run 'mysql -u root -p icinga < /usr/local/share/icinga2-ido-mysql/schema/mysql.sql';
-            run 'cp /var/www/conf/modules{.sample,}/php-7.0.conf';
-            run 'chmod -R ugo+rw /var/www/etc/icingaweb2';
-            # /etc/apache2/httpd2.conf
-            # LoadModule mod_rewrite.so
-            #   Needed for icingaweb2 to remove "index.php" from paths
-            # Include /etc/apache2/vhost/*.conf
-            #   Needed to load vhost configs
-            # /etc/fstab / wxallowed
-            #   Needed for php to work on newer OpenBSD
-            # /etc/php-7.0.ini pdo_mysql.so
-            #   Load PDO mysql
-
-            ### Distributed monitoring
-            # http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/distributed-monitoring#distributed-monitoring-automation
-            # Set up monitor master
-            run 'icinga2 node setup --master';
-            # Cert gets made in /etc/icinga2/pki/ca.crt to copy to client
-
-            # Set up monitor clients
-            # $ apt-get install icinga2
-            # $ icinga2 feature enable api
-            # $ mkdir -p /etc/icinga2/pki
-            # $ chown -R icinga:icinga /etc/icinga2/pki
-            # $ icinga2 pki new-cert --cn <client-fqdn> \
-            # --key /etc/icinga2/pki/<client-fqdn>.key \
-            # --cert /etc/icinga2/pki/<client-fqdn>.cert
-            # Copy the trusted master certificate as /etc/icinga2/pki/master.crt
-            # $ icinga2 pki save-cert --key /etc/icinga2/pki/<client-fqdn>.key \
-            # --cert /etc/icinga2/pki/<client-fqdn>.crt \
-            # --trustedcert /etc/icinga2/pki/master.crt \
-            # --host <master-fqdn>
-            # $ icinga2 node setup --ticket <ticket> \
-            # --endpoint <master-fqdn> \
-            # --zone <client-fqdn> \
-            # --master_host <master-fqdn> \
-            # --trustedcert /etc/icinga2/pki/master.crt \
-            # --accept-config
-            # $ service icinga2 restart
-
-            run 'rcctl restart apache2';
-            run 'rcctl restart icinga2';
-        };
-    };
-
-desc 'Start maintenance mode';
-task 'start_maintenance' =>
-    group => [qw( www )],
-    sub {
-        ensure_sudo_password();
-        sudo sub {
-            Rex::Logger::info( 'Syncing maintenance site' );
-            run 'mkdir -p /var/www/maintenance';
-            sync_up 'var/www/maintenance', '/var/www/maintenance';
-            Rex::Logger::info( 'Disabling app sites' );
-            run 'a2dissite ' . $_ for @{ get 'www_app_config_files' };
-            Rex::Logger::info( 'Enabling maintenance site' );
-            run 'a2ensite ' . get 'www_maintenance_config_file';
-            Rex::Logger::info( 'Restarting apache' );
-            service apache2 => 'reload';
-            # XXX: Purge the Fastly cache
-        }
-    };
-
-desc 'Stop maintenance mode';
-task 'stop_maintenance' =>
-    group => [qw( www )],
-    sub {
-        ensure_sudo_password();
-        sudo sub {
-            Rex::Logger::info( 'Enabling app sites' );
-            run 'a2ensite ' . $_ for @{ get 'www_app_config_files' };
-            Rex::Logger::info( 'Disabling maintenance site' );
-            run 'a2dissite ' . get 'www_maintenance_config_file';
-            Rex::Logger::info( 'Restarting apache' );
-            service apache2 => 'reload';
-            # XXX: Purge the Fastly cache
-        }
     };
 
 #######################################################################
@@ -394,6 +165,7 @@ task 'stop_maintenance' =>
 
 sub ensure_sudo_password {
     return if sudo_password();
+    return if get 'no_sudo_password';
     print 'Password to use for sudo: ';
     ReadMode('noecho');
     sudo_password ReadLine(0);
