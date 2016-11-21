@@ -56,6 +56,16 @@ environment vm => sub {
 #######################################################################
 # Tasks
 
+=head2 prepare
+
+    rex -g api prepare
+
+Prepare a machine for a CPAN Testers role by installing common OS packages.
+This will also, in the future, install firewalls, update security packages,
+and other thing.
+
+=cut
+
 desc 'Prepare the machine for a CPANTesters role by installing OS packages';
 task prepare =>
     sub {
@@ -67,6 +77,15 @@ task prepare =>
         };
     };
 
+=head2 prepare_api
+
+    rex prepare_api
+
+Prepare a machine to run the CPAN Testers API by installing OS-level
+package requirements.
+
+=cut
+
 desc 'Prepare the machine to run the CPAN Testers API';
 task prepare_api =>
     sub {
@@ -77,6 +96,16 @@ task prepare_api =>
             install package => $_ for @{ get 'api_packages' };
         };
     };
+
+=head2 prepare_perl
+
+    rex -g api prepare_perl
+
+Install L<perlbrew|http://perlbrew.pl>, install the right Perl version
+and install any other prereqs to ensure a proper, working Perl
+environment.
+
+=cut
 
 desc 'Deploy Perl to the server using perlbrew';
 task prepare_perl =>
@@ -99,6 +128,17 @@ task prepare_perl =>
             run 'perlbrew exec cpanm local::lib', %env;
         };
     };
+
+=head2 prepare_user
+
+    rex prepare_user
+
+Prepare a C<cpantesters> user in the given host. Also sets up a local
+SSH key to use to log in as the C<cpantesters> user (saved in
+C<~/.ssh/cpantesters-rex>). This key is used by all CPAN Testers
+Rexfiles to deploy apps and perform tasks.
+
+=cut
 
 desc 'Set up a local cpantesters user';
 task prepare_user =>
@@ -161,7 +201,15 @@ task prepare_user =>
     };
 
 #######################################################################
-# Subroutines
+
+=head1 Subroutines
+
+=head2 ensure_sudo_password
+
+Ensure a C<sudo> password is set. Use this at the start of any task
+that requires C<sudo>.
+
+=cut
 
 sub ensure_sudo_password {
     return if sudo_password();
