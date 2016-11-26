@@ -196,9 +196,7 @@ task prepare_user =>
 
             Rex::Logger::info( 'Setting up user environment' );
             file '/home/cpantesters/.profile',
-                source => 'home/profile';
-            file '/home/cpantesters/.bash_profile',
-                content => 'source ~/.profile';
+                source => 'etc/profile';
 
             Rex::Logger::info( 'Enabling Perl' );
             run 'sudo -i -u cpantesters PERLBREW_ROOT=' . $perlbrew_root . ' perlbrew switch perl-' . $perl_version;
