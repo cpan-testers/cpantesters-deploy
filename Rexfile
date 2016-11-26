@@ -37,7 +37,7 @@ set perlbrew_root => '/opt/local/perlbrew';
 set common_packages => [ qw/
     build-essential git perl-doc perl vim logrotate ack-grep
 / ];
-set api_packages => [qw/ perlbrew libmysqlclient-dev /];
+set api_packages => [qw/ runit perlbrew libmysqlclient-dev /];
 
 #######################################################################
 # Environments
@@ -98,6 +98,10 @@ task prepare_api =>
         sudo sub {
             install package => $_ for @{ get 'api_packages' };
         };
+
+        Rex::Logger::info( "Disabling system runit" );
+        run 'systemctl stop runit.service';
+        run 'systemctl disable runit.service';
 
         run_task 'prepare_perl', on => connection->server;
         run_task 'prepare_user', on => connection->server;
@@ -207,6 +211,20 @@ task prepare_user =>
                 group => 'cpantesters',
                 mode => '600',
                 source => 'etc/cpanstats.cnf';
+
+            Rex::Logger::info( 'Adding service/ directory' );
+            file '/home/cpantesters/service',
+                ensure => 'directory',
+                owner => 'cpantesters',
+                group => 'cpantesters',
+                ;
+            sync_up 'etc/systemd', '/etc/systemd/system', {
+                files => {
+                    mode => 664,
+                },
+            };
+            run 'systemctl enable runsvdir';
+            run 'systemctl start runsvdir';
         };
     };
 

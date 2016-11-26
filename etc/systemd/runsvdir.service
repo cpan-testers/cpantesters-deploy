@@ -1,0 +1,9 @@
+[Unit]
+Description=Run services for cpantesters user
+[Service]
+Type=simple
+ExecStart=/usr/bin/runsvdir -P /home/cpantesters/service
+User=cpantesters
+Group=cpantesters
+[Install]
+WantedBy=multi-user.target
