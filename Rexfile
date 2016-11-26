@@ -6,10 +6,7 @@ Rexfile - Rex task configuration for CPANTesters
 =head1 SYNOPSIS
 
     # Prepare an API server
-    rex prepare
-    rex prepare_api
-    rex prepare_perl
-    rex prepare_user
+    rex -E <env> prepare_api
 
 =head1 DESCRIPTION
 
@@ -64,6 +61,8 @@ Prepare a machine for a CPAN Testers role by installing common OS packages.
 This will also, in the future, install firewalls, update security packages,
 and other thing.
 
+This task is run automatically by other prepare tasks like C<prepare_api>.
+
 =cut
 
 desc 'Prepare the machine for a CPANTesters role by installing OS packages';
@@ -82,19 +81,26 @@ task prepare =>
     rex prepare_api
 
 Prepare a machine to run the CPAN Testers API by installing OS-level
-package requirements.
+package requirements (L</prepare>), setting up Perl (L</prepare_perl>),
+and setting up a user account (L</prepare_user>).
 
 =cut
 
 desc 'Prepare the machine to run the CPAN Testers API';
 task prepare_api =>
+    group => [qw( api )],
     sub {
         ensure_sudo_password();
+
+        run_task 'prepare', on => connection->server;
 
         Rex::Logger::info( "Checking API packages" );
         sudo sub {
             install package => $_ for @{ get 'api_packages' };
         };
+
+        run_task 'prepare_perl', on => connection->server;
+        run_task 'prepare_user', on => connection->server;
     };
 
 =head2 prepare_perl
@@ -103,7 +109,8 @@ task prepare_api =>
 
 Install L<perlbrew|http://perlbrew.pl>, install the right Perl version
 and install any other prereqs to ensure a proper, working Perl
-environment.
+environment. This task is run automatically by other prepare tasks like
+C<prepare_api>.
 
 =cut
 
@@ -136,7 +143,8 @@ task prepare_perl =>
 Prepare a C<cpantesters> user in the given host. Also sets up a local
 SSH key to use to log in as the C<cpantesters> user (saved in
 C<~/.ssh/cpantesters-rex>). This key is used by all CPAN Testers
-Rexfiles to deploy apps and perform tasks.
+Rexfiles to deploy apps and perform tasks. This task is run
+automatically by other prepare tasks like C<prepare_api>.
 
 =cut
 
