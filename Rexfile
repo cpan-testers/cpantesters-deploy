@@ -90,18 +90,18 @@ desc 'Prepare the machine to run the CPAN Testers API';
 task prepare_api =>
     group => [qw( api )],
     sub {
-        ensure_sudo_password();
 
         run_task 'prepare', on => connection->server;
 
-        Rex::Logger::info( "Checking API packages" );
+        ensure_sudo_password();
         sudo sub {
+            Rex::Logger::info( "Checking API packages" );
             install package => $_ for @{ get 'api_packages' };
-        };
 
-        Rex::Logger::info( "Disabling system runit" );
-        run 'systemctl stop runit.service';
-        run 'systemctl disable runit.service';
+            Rex::Logger::info( "Disabling system runit" );
+            run 'systemctl stop runit';
+            run 'systemctl disable runit';
+        };
 
         run_task 'prepare_perl', on => connection->server;
         run_task 'prepare_user', on => connection->server;
