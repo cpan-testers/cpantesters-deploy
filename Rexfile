@@ -129,8 +129,12 @@ task prepare_perl =>
             pkg 'perlbrew', ensure => 'present';
             file $root, ensure => 'directory';
             run 'perlbrew init', %env;
-            Rex::Logger::info( 'Installing Perl ' . $perl_version );
-            run 'perlbrew install ' . $perl_version, %env;
+            my @versions = run 'perlbrew list', %env;
+            Rex::Logger::info( "Installed perls: @versions" );
+            if ( !grep { /$perl_version$/ } @versions ) {
+                Rex::Logger::info( 'Installing Perl ' . $perl_version );
+                run 'perlbrew install ' . $perl_version, %env;
+            }
             run 'perlbrew install-cpanm', %env;
             run 'perlbrew exec cpanm local::lib', %env;
         };
