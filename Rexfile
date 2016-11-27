@@ -37,7 +37,7 @@ set perlbrew_root => '/opt/local/perlbrew';
 set common_packages => [ qw/
     build-essential git perl-doc perl vim logrotate ack-grep
 / ];
-set api_packages => [qw/ runit perlbrew libmysqlclient-dev /];
+set api_packages => [qw/ apache2 runit perlbrew libmysqlclient-dev /];
 
 #######################################################################
 # Environments
@@ -101,6 +101,14 @@ task prepare_api =>
             Rex::Logger::info( "Disabling system runit" );
             run 'systemctl stop runit';
             run 'systemctl disable runit';
+
+            Rex::Logger::info( "Installing reverse proxy for api.cpantesters.org" );
+            run 'a2enmod ' . $_ for qw( proxy proxy_http );
+            file '/etc/apache2/sites-available/api.cpantesters.org.conf',
+                source => 'etc/apache2/vhost/api.cpantesters.org.conf';
+            run 'a2ensite api.cpantesters.org';
+            run 'a2dissite 000-default';
+            service apache2 => 'restart';
         };
 
         run_task 'prepare_perl', on => connection->server;
