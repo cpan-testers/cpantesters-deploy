@@ -103,7 +103,7 @@ task prepare_api =>
             run 'systemctl disable runit';
 
             Rex::Logger::info( "Installing reverse proxy for api.cpantesters.org" );
-            run 'a2enmod ' . $_ for qw( proxy proxy_http );
+            run 'a2enmod ' . $_ for qw( proxy proxy_http proxy_wstunnel );
             file '/etc/apache2/sites-available/api.cpantesters.org.conf',
                 source => 'etc/apache2/vhost/api.cpantesters.org.conf';
             run 'a2ensite api.cpantesters.org';
