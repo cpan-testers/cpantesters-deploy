@@ -27,6 +27,7 @@ use File::Basename qw( basename );
 #######################################################################
 # Groups
 group api => 'cpantesters3.dh.bytemark.co.uk';
+group monitor => 'monitor.preaction.me';
 
 #######################################################################
 # Settings
@@ -44,6 +45,7 @@ set api_packages => [qw/ apache2 runit perlbrew libmysqlclient-dev /];
 # The Vagrant VM for development purposes
 environment vm => sub {
     group api => '192.168.127.127'; # the Vagrant VM IP
+    group monitor => '192.168.127.127';
     set 'no_sudo_password' => 1;
     user 'vagrant';
     # XXX: Does this only work with virtualbox?
@@ -233,6 +235,41 @@ task prepare_user =>
             };
             run 'systemctl enable runsvdir';
             run 'systemctl start runsvdir';
+        };
+    };
+
+=head2 prepare_monitor
+
+    rex prepare_monitor
+
+Prepare the server for the monitoring packages.
+
+=cut
+
+desc 'Prepare server to be a monitor';
+task prepare_monitor =>
+    group => [qw( monitor )],
+    sub {
+        ensure_sudo_password();
+        sudo sub {
+            Rex::Logger::info( 'Enabling backports' );
+            repository add => "backports",
+                url => 'http://ftp.debian.org/debian',
+                distro => 'jessie-backports',
+                repository => 'main';
+            pkg 'apt-transport-https', ensure => "present";
+
+            Rex::Logger::info( 'Enabling Grafana packages' );
+            repository add => "grafana",
+                url => 'https://packagecloud.io/grafana/stable/debian/',
+                key_url => 'https://packagecloud.io/gpg.key',
+                distro => 'jessie',
+                repository => 'main';
+            update_package_db;
+
+            Rex::Logger::info( 'Installing Grafana' );
+            pkg 'grafana', ensure => "present";
+            service 'grafana-server', ensure => 'started';
         };
     };
 
