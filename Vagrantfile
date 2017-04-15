@@ -10,7 +10,7 @@ Vagrant.configure("2") do |config|
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
-  #config.vm.network "private_network", ip: "192.168.127.127"
+  config.vm.network "private_network", ip: "192.168.127.127"
 
 
   # vb.customize does not returns output from the command
