@@ -2,7 +2,7 @@ package Process::Monitor;
 use strict;
 use warnings;
 use Proc::ProcessTable 0.53;
-use List::MoreUtils 0.416;
+use List::MoreUtils 0.416 'any';
 use Exporter 'import';
 
 # VERSION
@@ -75,7 +75,7 @@ Except for the first two indexes, all other items are described in the L<Proc::P
 sub grab_procs {
 
     my ($user_list_ref) = @_;
-    my $procs = Pro::ProcessTable->new();
+    my $procs = Proc::ProcessTable->new();
     my %users_map;
 
     foreach my $user ( @{$user_list_ref} ) {
@@ -86,7 +86,7 @@ sub grab_procs {
     my @data;
     my $now = time();
 
-    foreach my $p ( $procs->table() ) {
+    foreach my $p ( @{$procs->table()} ) {
 
         if ( any { $p->uid == $_ } keys(%users_map) ) {
             my $pctcpu = ( $p->pctcpu ) + 0;
