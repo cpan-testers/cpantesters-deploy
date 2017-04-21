@@ -1,0 +1,21 @@
+#!perl
+
+use warnings;
+use strict;
+use Process::Monitor qw(grab_procs);
+# VERSION
+
+# :TODO:21/04/2017 15:57:35:ARFREITAS: write proper command line parsing for arguments and doc
+#use GetOpt::Long;
+#use Pod::Usage
+
+my $data_ref = grab_procs(['www-data', 'barbie']);
+my $default_out = 'data.txt';
+open(my $out, '>>', $default_out) or die "Cannot create $default_out: $!";
+
+foreach my $row_ref(@{$data_ref}) {
+    print $out join('|', @{$row_ref}), "\n"; 
+}
+close($out);
+
+# vim: filetype=perl
