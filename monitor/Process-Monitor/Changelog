@@ -1,0 +1,20 @@
+Author: Alceu Rodrigues de Freitas Junior <arfreitas@cpan.org>
+Date:   Fri Apr 23 10:56:00 2017 -0300
+
+    Requested changes by preaction for Merge pull request
+
+
+commit 3fa5d7081bc42ed8e46ea47381ddcc78a5ef07d8
+Author: Alceu Rodrigues de Freitas Junior <arfreitas@cpan.org>
+Date:   Fri Apr 21 16:39:21 2017 -0300
+
+    Bugs fixes
+    
+    Added basic testing
+    Fixed bugs
+
+commit d07f849a7bb4870484374a3ac6c4a9582cc615a5
+Author: Alceu Rodrigues de Freitas Junior <arfreitas@cpan.org>
+Date:   Fri Apr 21 16:04:52 2017 -0300
+
+    Initial release

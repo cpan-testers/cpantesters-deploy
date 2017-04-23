@@ -2,7 +2,7 @@ package Process::Monitor;
 use strict;
 use warnings;
 use Proc::ProcessTable 0.53;
-use List::MoreUtils 0.416 'any';
+use List::Util 1.33 'any';
 use Exporter 'import';
 
 # VERSION
