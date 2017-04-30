@@ -64,6 +64,8 @@ Vagrant.configure("2") do |config|
 
   # Guest Additions handling
   config.vm.provision "shell", inline: "apt-get update;apt-get -y upgrade;apt-get -y install module-assistant;m-a prepare --text-mode --non-inter"
+  # Enabling mod_rewrite, which is installed but not enabled by default
+  config.vm.provision "shell", inline: "a2enmod rewrite"
   # set auto_update to false, if you do NOT want to check the correct 
   # additions version when booting this machine
   #config.vbguest.auto_update = false
