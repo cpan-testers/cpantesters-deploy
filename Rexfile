@@ -86,6 +86,10 @@ Prepare a machine to run the CPAN Testers API by installing OS-level
 package requirements (L</prepare>), setting up Perl (L</prepare_perl>),
 and setting up a user account (L</prepare_user>).
 
+Once the machine is prepared, you can run the C<deploy> task from the
+L<cpantesters-api|http://github.com/cpan-testers/cpantesters-api/>
+C<Rexfile>.
+
 =cut
 
 desc 'Prepare the machine to run the CPAN Testers API';
