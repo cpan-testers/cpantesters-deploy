@@ -75,6 +75,9 @@ task prepare =>
         Rex::Logger::info( "Checking common packages" );
         sudo sub {
             install package => $_ for @{ get 'common_packages' };
+            Rex::Logger::info( "Enabling mod_rewrite for /etc/cpantesters.org.conf" );
+            run 'a2enmod rewrite';
+            service apache2 => 'restart';
         };
     };
 
