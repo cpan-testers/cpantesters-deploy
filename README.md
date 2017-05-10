@@ -4,6 +4,41 @@
 This repository contains deploy scripts and configuration files for the
 CPANTesters servers.
 
+## Getting Started
+
+### Running the VM
+
+To run the VM, you need Vagrant, VirtualBox, and some Vagrant plugins.
+Install Vagrant and VirtualBox according to your OS, and then to install
+the Vagrant plugins:
+
+    $ vagrant plugin vbguest
+
+### Preparing the VM
+
+To prepare the VM by deploying basic packages and creating user
+accounts, you need [Rex](http://rexify.org) installed. Rex is available
+from CPAN: `cpan Rex`. The VM you create can take on multiple roles. To
+see what roles are available and how to deploy them, run `perldoc
+./Rexfile`.
+
+In order to run the Rex task on your VM, make sure to pass the `-E vm`
+flag to `rex`.
+
+### Deploying Applications
+
+Each repository in the CPAN Testers application has its own `Rexfile` to
+deploy itself into the machine prepared by this repository. All of the
+repository Rexfiles also support the `-E vm` flag to deploy into the VM.
+
+These repositories are:
+
+* [CPAN::Testers::Schema](http://github.com/cpan-testers/cpantesters-schema) - Deploy the database schema
+* [CPAN::Testers::Backend](http://github.com/cpan-testers/cpantesters-backend) - Deploy the backend processing tasks and
+  daemons
+* [CPAN::Testers::API](http://github.com/cpan-testers/cpantesters-api) - Deploy the API server and message broker
+* [CPAN::Tesrers::Web](http://github.com/cpan-testers/cpantesters-web) - Deploy the primary web application
+
 ## Architecture Overview
 
 This is a quick overview of the CPANTesters architecture as managed by
@@ -37,7 +72,8 @@ use. There are also APIs available from the web frontend.
 ### Rexfile
 
 CPANTesters is managed with [Rex](http://rexify.org). The `Rexfile`
-contains the main routines for the CPANTesters deploy processes.
+contains the main routines for the CPANTesters deploy processes. To
+see the documentation for deploying, do `perldoc ./Rexfile`.
 
 ### `backend/`
 

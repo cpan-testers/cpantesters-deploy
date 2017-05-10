@@ -13,6 +13,78 @@ Rexfile - Rex task configuration for CPANTesters
 This file defines all the L<Rex|http://rexify.org> tasks used to deploy
 and configure the CPANTesters servers.
 
+=head2 Roles
+
+A single machine can take on multiple roles. Each role has
+a corresponding C<prepare_*> task to prepare the machine for that role.
+Most roles' main installation is done in another repository, listed with
+the roles below.
+
+Everything that requires a root account to perform (installing packages,
+creating users, running daemons on ports < 1024) is done by this Rexfile
+so that other Rexfiles can be done with lower privileges.
+
+=over 4
+
+=item database
+
+The C<database> role is for a database server. This will install the
+database and set up a database user that can deploy the schema.
+
+XXX: The C<prepare_database> task is not completed.
+
+The database schema is deployed by L<the CPAN::Testers::Schema
+Rexfile|http://github.com/cpan-testers/cpantesters-schema>.
+
+=item api
+
+The C<api> role is for the API server. The API server hosts the REST API
+and the message broker for real-time communication between the backend
+components. This task installs the Apache 2.4 HTTPD and sets up the
+reverse proxy to the Mojolicious API application.
+
+The C<prepare_api> task prepares a machine for an API role.
+
+The API daemons are deployed by L<the CPAN::Testers::API
+Rexfile|http://github.com/cpan-testers/cpantesters-api>.
+
+=item backend
+
+The C<backend> role prepares a server as a backend processing machine.
+These machines will join the job processing cluster and run periodic
+cron jobs to process incoming data into useful forms.
+
+XXX: The C<prepare_backend> task is not completed
+
+The backend daemons and jobs are deployed by L<the
+CPAN::Testers::Backend
+Rexfile|http://github.com/cpan-testers/cpantesters-backend>.
+
+=item web
+
+The C<web> role prepares a server to host the main CPAN Testers website,
+L<http://cpantesters.org>.  The web role installs the Apache 2.4 HTTPD
+and sets up the reverse proxy needed to access the main Mojolicious web
+application.
+
+XXX: The C<prepare_web> task is not completed
+
+The main web application is deployed by L<the
+CPAN::Testers::Web
+Rexfile|http://github.com/cpan-testers/cpantesters-web>.
+
+=item monitor
+
+The C<monitor> role prepares a server to monitor the rest of the
+network.  This installs monitoring packages and configures the alerting
+so that admins are notified when services are unavailable.
+
+XXX: Monitoring packages are installed but no monitors are configured
+
+This role does not have any other repository to worry about.
+
+=back
+
 =head1 SEE ALSO
 
 L<Rex|http://rexify.org>
