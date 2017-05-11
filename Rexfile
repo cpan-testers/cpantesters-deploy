@@ -114,7 +114,7 @@ set perl_version => '5.24.0';
 set perlbrew_root => '/opt/local/perlbrew';
 
 set common_packages => [ qw/
-    build-essential git perl-doc perl vim logrotate ack-grep
+    build-essential git perl-doc perl vim logrotate ack-grep ntp
 / ];
 set api_packages => [qw/ apache2 runit perlbrew libmysqlclient-dev /];
 
