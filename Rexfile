@@ -118,6 +118,7 @@ set common_packages => [ qw/
 / ];
 set api_packages => [qw/ apache2 runit perlbrew libmysqlclient-dev /];
 
+set database_host => '216.246.80.45';
 set database_name => 'cpanstats';
 set database_user => 'cpantesters';
 set database_password => 'Md5syMxdsKcf6n6eK';
@@ -132,6 +133,7 @@ environment vm => sub {
     group backend => '192.168.127.127';
     group web => '192.168.127.127';
     set 'no_sudo_password' => 1;
+    set database_host => '127.0.0.1';
     user 'vagrant';
     # XXX: Does this only work with virtualbox?
     private_key '.vagrant/machines/default/virtualbox/private_key';
@@ -310,8 +312,7 @@ task prepare_user =>
                 group => 'cpantesters',
                 mode => '600',
                 content => template( 'etc/cpanstats.cnf.tpl',
-                    ( map { $_ => get $_ } qw( database_user database_name database_password ) ),
-                    database_host => [ Rex::Group->get_group( 'database' ) ]->[0],
+                    ( map { $_ => get "database_$_" } qw( host user name password ) ),
                 );
 
             Rex::Logger::info( 'Adding service/ directory' );
@@ -389,8 +390,13 @@ task prepare_database =>
             Rex::Logger::info( 'Enabling database' );
             pkg 'mysql-server', ensure => 'present';
 
+            Rex::Logger::info( 'Configuring database' );
+            append_if_no_such_line '/etc/mysql/mysql.conf.d/mysqld.cnf',
+                'skip-name-resolve';
+            service 'mysql-server', 'restart';
+
             Rex::Logger::info( 'Creating database user: cpantesters' );
-            my @access_hosts = uniq map { Rex::Group->get_group( $_ ) } qw( api backend web );
+            my @access_hosts = uniq get( 'database_host' ), map { Rex::Group->get_group( $_ ) } qw( api backend web );
             my $pass = get 'database_password';
             for my $host ( @access_hosts ) {
                 run qq{mysql -e'GRANT ALL ON *.* TO "cpantesters"@"$host" IDENTIFIED BY "$pass"'};
