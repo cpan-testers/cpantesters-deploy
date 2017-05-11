@@ -29,9 +29,9 @@ so that other Rexfiles can be done with lower privileges.
 =item database
 
 The C<database> role is for a database server. This will install the
-database and set up a database user that can deploy the schema.
-
-XXX: The C<prepare_database> task is not completed.
+database and set up a database user that can deploy the schema. The
+database user is set up to allow access from the C<api>, C<backend>, and
+C<web> servers (which may all be the same server).
 
 The database schema is deployed by L<the CPAN::Testers::Schema
 Rexfile|http://github.com/cpan-testers/cpantesters-schema>.
@@ -95,11 +95,17 @@ use Rex -feature => [ 1.4 ];
 use Rex::Commands::Sync;
 use Term::ReadKey;
 use File::Basename qw( basename );
+use List::Util qw( uniq );
 
 #######################################################################
 # Groups
 group api => 'cpantesters3.dh.bytemark.co.uk';
+group backend => 'cpantesters3.dh.bytemark.co.uk';
+group web => 'cpantesters3.dh.bytemark.co.uk';
 group monitor => 'monitor.preaction.me';
+
+# The prod database is _not_ accessible via SSH from the outside world
+group database => '216.246.80.45';
 
 #######################################################################
 # Settings
@@ -112,12 +118,19 @@ set common_packages => [ qw/
 / ];
 set api_packages => [qw/ apache2 runit perlbrew libmysqlclient-dev /];
 
+set database_name => 'cpanstats';
+set database_user => 'cpantesters';
+set database_password => 'Md5syMxdsKcf6n6eK';
+
 #######################################################################
 # Environments
 # The Vagrant VM for development purposes
 environment vm => sub {
     group api => '192.168.127.127'; # the Vagrant VM IP
     group monitor => '192.168.127.127';
+    group database => '192.168.127.127';
+    group backend => '192.168.127.127';
+    group web => '192.168.127.127';
     set 'no_sudo_password' => 1;
     user 'vagrant';
     # XXX: Does this only work with virtualbox?
@@ -296,7 +309,10 @@ task prepare_user =>
                 owner => 'cpantesters',
                 group => 'cpantesters',
                 mode => '600',
-                source => 'etc/cpanstats.cnf';
+                content => template( 'etc/cpanstats.cnf.tpl',
+                    ( map { $_ => get $_ } qw( database_user database_name database_password ) ),
+                    database_host => [ Rex::Group->get_group( 'database' ) ]->[0],
+                );
 
             Rex::Logger::info( 'Adding service/ directory' );
             file '/home/cpantesters/service',
@@ -346,6 +362,39 @@ task prepare_monitor =>
             Rex::Logger::info( 'Installing Grafana' );
             pkg 'grafana', ensure => "present";
             service 'grafana-server', ensure => 'started';
+        };
+    };
+
+=head2 prepare_database
+
+    rex prepare_database
+
+Prepare the server to host the MySQL database
+
+=cut
+
+desc 'Prepare server to host a database';
+task prepare_database =>
+    group => [qw( database )],
+    sub {
+        ensure_sudo_password();
+        sudo sub {
+            Rex::Logger::info( 'Setting up MySQL APT Repo' );
+            run 'apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5';
+            file '/etc/apt/sources.list.d/mysql.list',
+                content => 'deb http://repo.mysql.com/apt/debian/ jessie mysql-5.7',
+                ;
+            update_package_db;
+
+            Rex::Logger::info( 'Enabling database' );
+            pkg 'mysql-server', ensure => 'present';
+
+            Rex::Logger::info( 'Creating database user: cpantesters' );
+            my @access_hosts = uniq map { Rex::Group->get_group( $_ ) } qw( api backend web );
+            my $pass = get 'database_password';
+            for my $host ( @access_hosts ) {
+                run qq{mysql -e'GRANT ALL ON *.* TO "cpantesters"@"$host" IDENTIFIED BY "$pass"'};
+            }
         };
     };
 
