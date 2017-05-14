@@ -196,18 +196,34 @@ task prepare_api =>
             run 'systemctl disable runit';
 
             run 'a2enmod ' . $_ for qw( proxy proxy_http proxy_wstunnel rewrite );
-            for my $site ( qw( api.cpantesters.org metabase.cpantesters.org ) ) {
-                Rex::Logger::info( "Installing reverse proxy for " . $site );
-                file "/etc/apache2/sites-available/$site.conf",
-                    source => "etc/apache2/vhost/$site.conf";
-                run 'a2ensite ' . $site;
-            }
-            run 'a2dissite 000-default';
-            service apache2 => 'restart';
         };
 
+        run_task 'deploy_www', on => connection->server;
         run_task 'prepare_perl', on => connection->server;
         run_task 'prepare_user', on => connection->server;
+    };
+
+=head2 deploy_www
+
+    rex deploy_www
+
+Deploy the Apache configuration files which reverse proxy to the individual
+Mojolicious web applications.
+
+=cut
+
+desc 'Deploy the WWW config files';
+task deploy_www =>
+    group => [qw( api )],
+    sub {
+        for my $site ( qw( api.cpantesters.org metabase.cpantesters.org ) ) {
+            Rex::Logger::info( "Installing reverse proxy for " . $site );
+            file "/etc/apache2/sites-available/$site.conf",
+                source => "etc/apache2/vhost/$site.conf";
+            run 'a2ensite ' . $site;
+        }
+        run 'a2dissite 000-default';
+        service apache2 => 'restart';
     };
 
 =head2 prepare_perl
