@@ -195,11 +195,13 @@ task prepare_api =>
             run 'systemctl stop runit';
             run 'systemctl disable runit';
 
-            Rex::Logger::info( "Installing reverse proxy for api.cpantesters.org" );
             run 'a2enmod ' . $_ for qw( proxy proxy_http proxy_wstunnel );
-            file '/etc/apache2/sites-available/api.cpantesters.org.conf',
-                source => 'etc/apache2/vhost/api.cpantesters.org.conf';
-            run 'a2ensite api.cpantesters.org';
+            for my $site ( qw( api.cpantesters.org metabase.cpantesters.org ) ) {
+                Rex::Logger::info( "Installing reverse proxy for " . $site );
+                file "/etc/apache2/sites-available/$site.conf",
+                    source => "etc/apache2/vhost/$site.conf";
+                run 'a2ensite ' . $site;
+            }
             run 'a2dissite 000-default';
             service apache2 => 'restart';
         };
@@ -300,8 +302,14 @@ task prepare_user =>
                 $ssh_key;
 
             Rex::Logger::info( 'Setting up user environment' );
-            file '/home/cpantesters/.profile',
-                content => template( 'etc/profile.tpl' );
+            for my $file ( qw( .profile .bash_profile ) ) {
+                file '/home/cpantesters/' . $file,
+                    content => template( 'etc/profile.tpl' ),
+                    owner => 'cpantesters',
+                    group => 'cpantesters',
+                    mode => '600',
+                    ;
+            }
 
             Rex::Logger::info( 'Enabling Perl' );
             run 'sudo -i -u cpantesters PERLBREW_ROOT=' . $perlbrew_root . ' perlbrew switch perl-' . $perl_version;
