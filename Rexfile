@@ -195,7 +195,7 @@ task prepare_api =>
             run 'systemctl stop runit';
             run 'systemctl disable runit';
 
-            run 'a2enmod ' . $_ for qw( proxy proxy_http proxy_wstunnel );
+            run 'a2enmod ' . $_ for qw( proxy proxy_http proxy_wstunnel rewrite );
             for my $site ( qw( api.cpantesters.org metabase.cpantesters.org ) ) {
                 Rex::Logger::info( "Installing reverse proxy for " . $site );
                 file "/etc/apache2/sites-available/$site.conf",
