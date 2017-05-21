@@ -37,7 +37,7 @@ These repositories are:
 * [CPAN::Testers::Backend](http://github.com/cpan-testers/cpantesters-backend) - Deploy the backend processing tasks and
   daemons
 * [CPAN::Testers::API](http://github.com/cpan-testers/cpantesters-api) - Deploy the API server and message broker
-* [CPAN::Tesrers::Web](http://github.com/cpan-testers/cpantesters-web) - Deploy the primary web application
+* [CPAN::Testers::Web](http://github.com/cpan-testers/cpantesters-web) - Deploy the primary web application
 
 ## Architecture Overview
 
