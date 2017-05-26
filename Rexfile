@@ -216,7 +216,7 @@ desc 'Deploy the WWW config files';
 task deploy_www =>
     group => [qw( api )],
     sub {
-        for my $site ( qw( api.cpantesters.org metabase.cpantesters.org ) ) {
+        for my $site ( qw( api.cpantesters.org metabase.cpantesters.org beta.cpantesters.org ) ) {
             Rex::Logger::info( "Installing reverse proxy for " . $site );
             file "/etc/apache2/sites-available/$site.conf",
                 source => "etc/apache2/vhost/$site.conf";
