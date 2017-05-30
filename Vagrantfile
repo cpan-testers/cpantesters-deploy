@@ -50,11 +50,6 @@ Vagrant.configure("2") do |config|
      # see https://www.virtualbox.org/manual/ch08.html
      # configure the minimum memory for video (set to 8MB originally)
      vb.customize ["modifyvm", :id, "--vram", "9"]
-     # This needs to be set as idempotent change
-     # remove the floppy
-     unless floppy_controller.empty?
-       vb.customize ["storagectl", :id, "--name", floppy_controller, "--remove"]
-     end
      # adds a CDROM
      # also assumes config.vm.box has a single SATA HD in port 0
      unless has_cdrom
