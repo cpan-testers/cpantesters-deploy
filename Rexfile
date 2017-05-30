@@ -385,11 +385,37 @@ task prepare_monitor =>
                 key_url => 'https://packagecloud.io/gpg.key',
                 distro => 'jessie',
                 repository => 'main';
+
+            Rex::Logger::info( 'Enabling fluentd packages' );
+            repository add => 'fluentd',
+                key_url => 'https://packages.treasuredata.com/GPG-KEY-td-agent',
+                url => 'http://packages.treasuredata.com/2/debian/jessie/',
+                distro => 'jessie',
+                repository => 'contrib',
+                ;
+
+            Rex::Logger::info( 'Enabling InfluxDB packages' );
+            repository add => 'influxdb',
+                key_url => 'https://repos.influxdata.com/influxdb.key',
+                url => 'https://repos.influxdata.com/debian',
+                distro => 'jessie',
+                repository => 'stable',
+                ;
+
+            Rex::Logger::info( 'Fetching package lists' );
             update_package_db;
 
             Rex::Logger::info( 'Installing Grafana' );
             pkg 'grafana', ensure => "present";
             service 'grafana-server', ensure => 'started';
+
+            Rex::Logger::info( 'Installing Fluentd' );
+            pkg 'td-agent', ensure => 'present';
+            service 'td-agent', ensure => 'started';
+
+            Rex::Logger::info( 'Installing InfluxDB' );
+            pkg 'influxdb', ensure => 'present';
+            service 'influxdb', ensure => 'started';
         };
     };
 
