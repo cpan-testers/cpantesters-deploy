@@ -405,17 +405,30 @@ task prepare_monitor =>
             Rex::Logger::info( 'Fetching package lists' );
             update_package_db;
 
-            Rex::Logger::info( 'Installing Grafana' );
+            Rex::Logger::info( 'Ensuring postfix is installed' );
+            pkg 'postfix', ensure => "present";
+
+            Rex::Logger::info( 'Ensuring Grafana is installed' );
             pkg 'grafana', ensure => "present";
 
-            Rex::Logger::info( 'Installing Fluentd' );
+            Rex::Logger::info( 'Ensuring Fluentd is installed' );
             pkg 'td-agent', ensure => 'present';
 
-            Rex::Logger::info( 'Installing InfluxDB' );
+            Rex::Logger::info( 'Ensuring InfluxDB is installed' );
             pkg 'influxdb', ensure => 'present';
 
-            Rex::Logger::info( 'Installing Telegraf' );
+            Rex::Logger::info( 'Ensuring Telegraf is installed' );
             pkg 'telegraf', ensure => 'present';
+
+            Rex::Logger::info( 'Configuring postfix for local-only mail' );
+            append_or_amend_line '/etc/postfix/main.cf',
+                regexp => qr{^\s*inet_interfaces\s*=},
+                line  => 'inet_interfaces = 127.0.0.1',
+                on_change => sub { service postfix => 'stop' };
+            append_or_amend_line '/etc/postfix/main.cf',
+                regexp => qr{^\s*smtpd_use_tls\s*=},
+                line  => 'smtpd_use_tls=no',
+                on_change => sub { service postfix => 'stop' };
 
             Rex::Logger::info( 'Configuring telegraf' );
             file '/etc/telegraf/telegraf.d/http.conf',
@@ -427,6 +440,7 @@ task prepare_monitor =>
                 ;
 
             Rex::Logger::info( 'Starting services' );
+            service 'postfix', ensure => 'started';
             service 'grafana-server', ensure => 'started';
             service 'td-agent', ensure => 'started';
             service 'influxdb', ensure => 'started';
