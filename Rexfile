@@ -448,6 +448,16 @@ task prepare_monitor =>
                 source => 'etc/telegraf/http.conf',
                 on_change => sub { service telegraf => 'stop' },
                 ;
+            file '/etc/telegraf/telegraf.d/mysql.conf',
+                owner => 'root',
+                group => 'root',
+                mode => '666',
+                content => template( 'etc/telegraf/mysql.conf.tpl',
+                    ( map { $_ => get "database_$_" } qw( host user name password ) ),
+                ),
+                on_change => sub { service telegraf => 'stop' },
+                ;
+
 
             Rex::Logger::info( 'Configuring grafana' );
             file '/etc/grafana/grafana.ini',
