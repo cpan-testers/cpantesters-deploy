@@ -7,7 +7,7 @@
   ##    servers = ["user@tcp(127.0.0.1:3306)/?tls=false"]
   #
   ## If no servers are specified, then localhost is used as the host.
-  servers = ["<%= $database_user %>:<%= $database_password %>@tcp(<%= $database_host %>:3306)/?tls=false"]
+  servers = [ <%= $servers %> ]
   ## the limits for metrics form perf_events_statements
   perf_events_statements_digest_text_limit  = 120
   perf_events_statements_limit              = 250

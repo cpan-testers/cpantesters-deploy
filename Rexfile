@@ -130,6 +130,9 @@ set monitor_host => 'monitor.preaction.me';
 set monitor_port => '3000';
 set monitor_user => 'admin';
 set monitor_password => 'YKn-sfS-a3U-KFs';
+set monitor_mysql_user => 'monitor';
+set monitor_mysql_password => 'fQZsTa6nvS83zjX';
+set monitor_mysql_hosts => [qw( 216.246.80.45 216.246.80.46 )];
 
 #######################################################################
 # Environments
@@ -145,6 +148,9 @@ environment vm => sub {
     set monitor_host => '192.168.127.127';
     set monitor_user => 'admin';
     set monitor_password => 'admin';
+    set monitor_mysql_user => get 'database_user';
+    set monitor_mysql_password => get 'database_password';
+    set monitor_mysql_hosts => [qw( 127.0.0.1 )];
     user 'vagrant';
     # XXX: Does this only work with virtualbox?
     private_key '.vagrant/machines/default/virtualbox/private_key';
@@ -454,7 +460,12 @@ task prepare_monitor =>
                 group => 'root',
                 mode => '666',
                 content => template( 'etc/telegraf/mysql.conf.tpl',
-                    ( map { $_ => get "database_$_" } qw( host user name password ) ),
+                    servers => q{"} . (
+                        join q{","}, map {
+                            get( 'monitor_mysql_user' ) . ':' . get( 'monitor_mysql_password' )
+                            . '@tcp(' . $_ . ':3306)/?tls=false'
+                        } @{ get 'monitor_mysql_hosts' }
+                    ) . q{"},
                 ),
                 on_change => sub { service telegraf => 'stop' },
                 ;
