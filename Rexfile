@@ -98,7 +98,7 @@ use File::Basename qw( basename );
 use List::Util qw( uniq );
 use HTTP::Tiny;
 use JSON::PP;
-my $JSON = JSON::PP->new->ascii->pretty;
+my $JSON = JSON::PP->new->ascii->pretty->canonical;
 
 #######################################################################
 # Groups
