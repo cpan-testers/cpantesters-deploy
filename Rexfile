@@ -97,7 +97,8 @@ use Term::ReadKey;
 use File::Basename qw( basename );
 use List::Util qw( uniq );
 use HTTP::Tiny;
-use JSON::PP qw( encode_json decode_json );
+use JSON::PP;
+my $JSON = JSON::PP->new->ascii->pretty;
 
 #######################################################################
 # Groups
@@ -541,7 +542,7 @@ task export_dashboards =>
                 next;
             }
             file sprintf( 'etc/grafana/dashboards/%s.json', $dashboard ),
-                content => $res->{content};
+                content => $JSON->encode( $JSON->decode( $res->{content} ) );
         }
     };
 
@@ -564,7 +565,7 @@ task import_dashboards =>
         my $pass = get 'monitor_password';
         for my $dashboard ( qw( Health ) ) {
             my $text = file_read( sprintf 'etc/grafana/dashboards/%s.json', $dashboard )->read_all;
-            my $json = decode_json( $text );
+            my $json = $JSON->decode( $text );
             my $slug = $json->{meta}{slug};
 
             # Check to see if it exists
@@ -579,7 +580,7 @@ task import_dashboards =>
             }
 
             my $post_url = sprintf 'http://%s:%s@%s:%d/api/dashboards/db', $user, $pass, $host, $port;
-            my $post_res = $http->post( $post_url, { content => encode_json( $json ), headers => { 'Content-Type' => 'application/json' } } );
+            my $post_res = $http->post( $post_url, { content => $JSON->encode( $json ), headers => { 'Content-Type' => 'application/json' } } );
             if ( !$post_res->{success} ) {
                 Rex::Logger::info( sprintf( 'Failed to post dashboard %s: %s', $dashboard, $post_res->{content} ), 'error' );
                 next;
