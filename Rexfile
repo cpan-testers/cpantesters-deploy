@@ -96,6 +96,8 @@ use Rex::Commands::Sync;
 use Term::ReadKey;
 use File::Basename qw( basename );
 use List::Util qw( uniq );
+use HTTP::Tiny;
+use JSON::PP qw( encode_json decode_json );
 
 #######################################################################
 # Groups
@@ -505,6 +507,75 @@ task prepare_database =>
         };
     };
 
+=head2 export_dashboards
+
+    rex -E vm export_dashboards
+
+Export the Grafana dashboards so they can be saved in the Git repository.
+Later, we can use C<import_dashboards> to import these dashboards.
+
+=cut
+
+desc 'Export the dashboards from this environment';
+task export_dashboards =>
+    sub {
+        my $http = HTTP::Tiny->new;
+        my $host = get 'monitor_host';
+        my $port = get 'monitor_port';
+        my $user = get 'monitor_user';
+        my $pass = get 'monitor_password';
+        for my $dashboard ( qw( Health ) ) {
+            my $res = $http->get( sprintf 'http://%s:%s@%s:%d/api/dashboards/db/%s', $user, $pass, $host, $port, $dashboard );
+            if ( !$res->{success} ) {
+                Rex::Logger::info( sprintf( 'Failed to get dashboard %s: %s', $dashboard, $res->{content} ), 'error' );
+                next;
+            }
+            file sprintf( 'etc/grafana/dashboards/%s.json', $dashboard ),
+                content => $res->{content};
+        }
+    };
+
+=head2 import_dashboards
+
+    rex import_dashboards
+
+Import the Grafana dashboards so they can be used. We can edit them
+and use C<export_dashboards> to export the dashboards for savekeeping.
+
+=cut
+
+desc 'Import the dashboards from this environment';
+task import_dashboards =>
+    sub {
+        my $http = HTTP::Tiny->new;
+        my $host = get 'monitor_host';
+        my $port = get 'monitor_port';
+        my $user = get 'monitor_user';
+        my $pass = get 'monitor_password';
+        for my $dashboard ( qw( Health ) ) {
+            my $text = file_read( sprintf 'etc/grafana/dashboards/%s.json', $dashboard )->read_all;
+            my $json = decode_json( $text );
+            my $slug = $json->{meta}{slug};
+
+            # Check to see if it exists
+            my $get_url = sprintf 'http://%s:%s@%s:%d/api/dashboards/db/%s', $user, $pass, $host, $port, $slug;
+            my $get_res = $http->get( $get_url );
+            if ( !$get_res->{success} ) {
+                delete $json->{dashboard}{id};
+            }
+            else {
+                my $res_json = decode_json( $get_res->{content} );
+                $json->{dashboard}{id} = $res_json->{dashboard}{id};
+            }
+
+            my $post_url = sprintf 'http://%s:%s@%s:%d/api/dashboards/db', $user, $pass, $host, $port;
+            my $post_res = $http->post( $post_url, { content => encode_json( $json ), headers => { 'Content-Type' => 'application/json' } } );
+            if ( !$post_res->{success} ) {
+                Rex::Logger::info( sprintf( 'Failed to post dashboard %s: %s', $dashboard, $post_res->{content} ), 'error' );
+                next;
+            }
+        }
+    };
 #######################################################################
 
 =head1 Subroutines
