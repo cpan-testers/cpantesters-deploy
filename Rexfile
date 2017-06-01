@@ -123,6 +123,11 @@ set database_name => 'cpanstats';
 set database_user => 'cpantesters';
 set database_password => 'Md5syMxdsKcf6n6eK';
 
+set monitor_host => 'monitor.preaction.me';
+set monitor_port => '3000';
+set monitor_user => 'admin';
+set monitor_password => 'YKn-sfS-a3U-KFs';
+
 #######################################################################
 # Environments
 # The Vagrant VM for development purposes
@@ -134,6 +139,9 @@ environment vm => sub {
     group web => '192.168.127.127';
     set 'no_sudo_password' => 1;
     set database_host => '127.0.0.1';
+    set monitor_host => '192.168.127.127';
+    set monitor_user => 'admin';
+    set monitor_password => 'admin';
     user 'vagrant';
     # XXX: Does this only work with virtualbox?
     private_key '.vagrant/machines/default/virtualbox/private_key';
@@ -437,6 +445,17 @@ task prepare_monitor =>
                 mode => '666',
                 source => 'etc/telegraf/http.conf',
                 on_change => sub { service telegraf => 'stop' },
+                ;
+
+            Rex::Logger::info( 'Configuring grafana' );
+            file '/etc/grafana/grafana.ini',
+                owner => 'root',
+                group => 'grafana',
+                mode => '640',
+                content => template( 'etc/grafana/grafana.ini.tpl',
+                    ( map { $_ => get "monitor_$_" } qw( host user name password ) ),
+                ),
+                on_change => sub { service 'grafana-server' => 'stop' },
                 ;
 
             Rex::Logger::info( 'Starting services' );
