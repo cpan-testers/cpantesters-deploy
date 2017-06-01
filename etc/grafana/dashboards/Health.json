@@ -1,28 +1,660 @@
 {
-   "meta" : {
-      "updatedBy" : "admin",
-      "canEdit" : true,
-      "version" : 12,
-      "updated" : "2017-06-01T05:07:57Z",
-      "expires" : "0001-01-01T00:00:00Z",
-      "createdBy" : "admin",
-      "canStar" : true,
-      "created" : "2017-06-01T00:18:07Z",
-      "canSave" : true,
-      "slug" : "health",
-      "type" : "db"
-   },
    "dashboard" : {
-      "gnetId" : null,
-      "title" : "Health",
-      "editable" : true,
-      "hideControls" : false,
-      "tags" : [],
-      "style" : "dark",
+      "annotations" : {
+         "list" : []
+      },
       "description" : "Health checks for the CPAN Testers application",
-      "version" : 12,
-      "id" : 1,
-      "timezone" : "browser",
+      "editable" : true,
+      "gnetId" : null,
+      "graphTooltip" : 0,
+      "hideControls" : false,
+      "id" : 3,
+      "links" : [],
+      "refresh" : "10s",
+      "rows" : [
+         {
+            "collapse" : false,
+            "height" : "250px",
+            "panels" : [
+               {
+                  "alert" : {
+                     "conditions" : [
+                        {
+                           "evaluator" : {
+                              "params" : [
+                                 30
+                              ],
+                              "type" : "gt"
+                           },
+                           "operator" : {
+                              "type" : "and"
+                           },
+                           "query" : {
+                              "datasourceId" : 1,
+                              "model" : {
+                                 "alias" : "$tag_server",
+                                 "dsType" : "influxdb",
+                                 "groupBy" : [
+                                    {
+                                       "params" : [
+                                          "$interval"
+                                       ],
+                                       "type" : "time"
+                                    },
+                                    {
+                                       "params" : [
+                                          "server"
+                                       ],
+                                       "type" : "tag"
+                                    },
+                                    {
+                                       "params" : [
+                                          "linear"
+                                       ],
+                                       "type" : "fill"
+                                    }
+                                 ],
+                                 "measurement" : "http_response",
+                                 "policy" : "default",
+                                 "query" : "SELECT mean(\"response_time\") FROM \"http_response\" WHERE $timeFilter GROUP BY time($interval), \"server\"",
+                                 "rawQuery" : false,
+                                 "refId" : "A",
+                                 "resultFormat" : "time_series",
+                                 "select" : [
+                                    [
+                                       {
+                                          "params" : [
+                                             "response_time"
+                                          ],
+                                          "type" : "field"
+                                       },
+                                       {
+                                          "params" : [],
+                                          "type" : "mean"
+                                       }
+                                    ]
+                                 ],
+                                 "tags" : []
+                              },
+                              "params" : [
+                                 "A",
+                                 "5m",
+                                 "now"
+                              ]
+                           },
+                           "reducer" : {
+                              "params" : [],
+                              "type" : "avg"
+                           },
+                           "type" : "query"
+                        }
+                     ],
+                     "executionErrorState" : "alerting",
+                     "frequency" : "60s",
+                     "handler" : 1,
+                     "message" : "HTTP server is down!",
+                     "name" : "HTTP Performance alert",
+                     "noDataState" : "no_data",
+                     "notifications" : [
+                        {
+                           "id" : 1
+                        }
+                     ]
+                  },
+                  "aliasColors" : {},
+                  "bars" : false,
+                  "dashLength" : 10,
+                  "dashes" : false,
+                  "datasource" : "InfluxDB",
+                  "description" : "The response time of the CPAN Testers web applications",
+                  "fill" : 1,
+                  "id" : 1,
+                  "legend" : {
+                     "alignAsTable" : false,
+                     "avg" : false,
+                     "current" : false,
+                     "max" : false,
+                     "min" : false,
+                     "rightSide" : false,
+                     "show" : true,
+                     "total" : false,
+                     "values" : false
+                  },
+                  "lines" : true,
+                  "linewidth" : 1,
+                  "links" : [],
+                  "nullPointMode" : "null",
+                  "percentage" : false,
+                  "pointradius" : 1,
+                  "points" : false,
+                  "renderer" : "flot",
+                  "seriesOverrides" : [],
+                  "spaceLength" : 10,
+                  "span" : 12,
+                  "stack" : false,
+                  "steppedLine" : false,
+                  "targets" : [
+                     {
+                        "alias" : "$tag_server",
+                        "dsType" : "influxdb",
+                        "groupBy" : [
+                           {
+                              "params" : [
+                                 "$interval"
+                              ],
+                              "type" : "time"
+                           },
+                           {
+                              "params" : [
+                                 "server"
+                              ],
+                              "type" : "tag"
+                           },
+                           {
+                              "params" : [
+                                 "linear"
+                              ],
+                              "type" : "fill"
+                           }
+                        ],
+                        "measurement" : "http_response",
+                        "policy" : "default",
+                        "query" : "SELECT mean(\"response_time\") FROM \"http_response\" WHERE $timeFilter GROUP BY time($interval), \"server\"",
+                        "rawQuery" : false,
+                        "refId" : "A",
+                        "resultFormat" : "time_series",
+                        "select" : [
+                           [
+                              {
+                                 "params" : [
+                                    "response_time"
+                                 ],
+                                 "type" : "field"
+                              },
+                              {
+                                 "params" : [],
+                                 "type" : "mean"
+                              }
+                           ]
+                        ],
+                        "tags" : []
+                     }
+                  ],
+                  "thresholds" : [
+                     {
+                        "colorMode" : "critical",
+                        "fill" : true,
+                        "line" : true,
+                        "op" : "gt",
+                        "value" : 30
+                     }
+                  ],
+                  "timeFrom" : null,
+                  "timeShift" : null,
+                  "title" : "HTTP Performance",
+                  "tooltip" : {
+                     "shared" : true,
+                     "sort" : 2,
+                     "value_type" : "individual"
+                  },
+                  "type" : "graph",
+                  "xaxis" : {
+                     "buckets" : null,
+                     "mode" : "time",
+                     "name" : null,
+                     "show" : true,
+                     "values" : []
+                  },
+                  "yaxes" : [
+                     {
+                        "format" : "s",
+                        "label" : "Response Time (s)",
+                        "logBase" : 1,
+                        "max" : null,
+                        "min" : null,
+                        "show" : true
+                     },
+                     {
+                        "format" : "none",
+                        "label" : "",
+                        "logBase" : 1,
+                        "max" : null,
+                        "min" : null,
+                        "show" : false
+                     }
+                  ]
+               }
+            ],
+            "repeat" : null,
+            "repeatIteration" : null,
+            "repeatRowId" : null,
+            "showTitle" : false,
+            "title" : "HTTP",
+            "titleSize" : "h6"
+         },
+         {
+            "collapse" : false,
+            "height" : -345,
+            "panels" : [
+               {
+                  "cacheTimeout" : null,
+                  "colorBackground" : false,
+                  "colorValue" : true,
+                  "colors" : [
+                     "rgba(227, 245, 54, 0.9)",
+                     "rgba(207, 63, 90, 0.89)",
+                     "rgba(107, 230, 102, 0.97)"
+                  ],
+                  "datasource" : null,
+                  "format" : "none",
+                  "gauge" : {
+                     "maxValue" : 100,
+                     "minValue" : 0,
+                     "show" : false,
+                     "thresholdLabels" : false,
+                     "thresholdMarkers" : true
+                  },
+                  "height" : "70px",
+                  "id" : 4,
+                  "interval" : null,
+                  "links" : [],
+                  "mappingType" : 2,
+                  "mappingTypes" : [
+                     {
+                        "name" : "value to text",
+                        "value" : 1
+                     },
+                     {
+                        "name" : "range to text",
+                        "value" : 2
+                     }
+                  ],
+                  "maxDataPoints" : 100,
+                  "nullPointMode" : "connected",
+                  "nullText" : null,
+                  "postfix" : "",
+                  "postfixFontSize" : "50%",
+                  "prefix" : "",
+                  "prefixFontSize" : "50%",
+                  "rangeMaps" : [
+                     {
+                        "from" : "null",
+                        "text" : "N/A",
+                        "to" : "null"
+                     },
+                     {
+                        "from" : "1",
+                        "text" : "Yes",
+                        "to" : "1"
+                     },
+                     {
+                        "from" : "0",
+                        "text" : "No",
+                        "to" : "0"
+                     }
+                  ],
+                  "span" : 6,
+                  "sparkline" : {
+                     "fillColor" : "rgba(31, 118, 189, 0.18)",
+                     "full" : false,
+                     "lineColor" : "rgb(31, 120, 193)",
+                     "show" : false
+                  },
+                  "tableColumn" : "",
+                  "targets" : [
+                     {
+                        "dsType" : "influxdb",
+                        "groupBy" : [
+                           {
+                              "params" : [
+                                 "$__interval"
+                              ],
+                              "type" : "time"
+                           },
+                           {
+                              "params" : [
+                                 "null"
+                              ],
+                              "type" : "fill"
+                           }
+                        ],
+                        "measurement" : "mysql",
+                        "orderByTime" : "ASC",
+                        "policy" : "default",
+                        "refId" : "A",
+                        "resultFormat" : "time_series",
+                        "select" : [
+                           [
+                              {
+                                 "params" : [
+                                    "slave_Slave_SQL_Running"
+                                 ],
+                                 "type" : "field"
+                              },
+                              {
+                                 "params" : [],
+                                 "type" : "mean"
+                              }
+                           ]
+                        ],
+                        "tags" : []
+                     }
+                  ],
+                  "thresholds" : "1,0,null",
+                  "title" : "Slave SQL Running",
+                  "transparent" : true,
+                  "type" : "singlestat",
+                  "valueFontSize" : "50%",
+                  "valueMaps" : [],
+                  "valueName" : "avg"
+               },
+               {
+                  "cacheTimeout" : null,
+                  "colorBackground" : false,
+                  "colorValue" : true,
+                  "colors" : [
+                     "rgba(227, 245, 54, 0.9)",
+                     "rgba(207, 63, 90, 0.89)",
+                     "rgba(107, 230, 102, 0.97)"
+                  ],
+                  "datasource" : null,
+                  "format" : "none",
+                  "gauge" : {
+                     "maxValue" : 100,
+                     "minValue" : 0,
+                     "show" : false,
+                     "thresholdLabels" : false,
+                     "thresholdMarkers" : true
+                  },
+                  "height" : "70px",
+                  "id" : 5,
+                  "interval" : null,
+                  "links" : [],
+                  "mappingType" : 2,
+                  "mappingTypes" : [
+                     {
+                        "name" : "value to text",
+                        "value" : 1
+                     },
+                     {
+                        "name" : "range to text",
+                        "value" : 2
+                     }
+                  ],
+                  "maxDataPoints" : 100,
+                  "nullPointMode" : "connected",
+                  "nullText" : null,
+                  "postfix" : "",
+                  "postfixFontSize" : "50%",
+                  "prefix" : "",
+                  "prefixFontSize" : "50%",
+                  "rangeMaps" : [
+                     {
+                        "from" : "null",
+                        "text" : "N/A",
+                        "to" : "null"
+                     },
+                     {
+                        "from" : "1",
+                        "text" : "Yes",
+                        "to" : "1"
+                     },
+                     {
+                        "from" : "0",
+                        "text" : "No",
+                        "to" : "0"
+                     }
+                  ],
+                  "span" : 6,
+                  "sparkline" : {
+                     "fillColor" : "rgba(31, 118, 189, 0.18)",
+                     "full" : false,
+                     "lineColor" : "rgb(31, 120, 193)",
+                     "show" : false
+                  },
+                  "tableColumn" : "",
+                  "targets" : [
+                     {
+                        "dsType" : "influxdb",
+                        "groupBy" : [
+                           {
+                              "params" : [
+                                 "$__interval"
+                              ],
+                              "type" : "time"
+                           },
+                           {
+                              "params" : [
+                                 "null"
+                              ],
+                              "type" : "fill"
+                           }
+                        ],
+                        "measurement" : "mysql",
+                        "orderByTime" : "ASC",
+                        "policy" : "default",
+                        "refId" : "A",
+                        "resultFormat" : "time_series",
+                        "select" : [
+                           [
+                              {
+                                 "params" : [
+                                    "slave_Slave_IO_Running"
+                                 ],
+                                 "type" : "field"
+                              },
+                              {
+                                 "params" : [],
+                                 "type" : "mean"
+                              }
+                           ]
+                        ],
+                        "tags" : []
+                     }
+                  ],
+                  "thresholds" : "1,0,null",
+                  "title" : "Slave IO Running",
+                  "transparent" : true,
+                  "type" : "singlestat",
+                  "valueFontSize" : "50%",
+                  "valueMaps" : [],
+                  "valueName" : "avg"
+               }
+            ],
+            "repeat" : null,
+            "repeatIteration" : null,
+            "repeatRowId" : null,
+            "showTitle" : false,
+            "title" : "Dashboard Row",
+            "titleSize" : "h6"
+         },
+         {
+            "collapse" : false,
+            "height" : 257,
+            "panels" : [
+               {
+                  "aliasColors" : {},
+                  "bars" : false,
+                  "dashLength" : 10,
+                  "dashes" : false,
+                  "datasource" : null,
+                  "description" : "The number of connections and queries on the MySQL database",
+                  "fill" : 1,
+                  "id" : 2,
+                  "legend" : {
+                     "avg" : false,
+                     "current" : false,
+                     "max" : false,
+                     "min" : false,
+                     "show" : true,
+                     "total" : false,
+                     "values" : false
+                  },
+                  "lines" : true,
+                  "linewidth" : 1,
+                  "links" : [],
+                  "nullPointMode" : "null",
+                  "percentage" : false,
+                  "pointradius" : 5,
+                  "points" : false,
+                  "renderer" : "flot",
+                  "seriesOverrides" : [],
+                  "spaceLength" : 10,
+                  "span" : 12,
+                  "stack" : false,
+                  "steppedLine" : false,
+                  "targets" : [
+                     {
+                        "alias" : "connections",
+                        "dsType" : "influxdb",
+                        "groupBy" : [
+                           {
+                              "params" : [
+                                 "$interval"
+                              ],
+                              "type" : "time"
+                           },
+                           {
+                              "params" : [
+                                 "null"
+                              ],
+                              "type" : "fill"
+                           }
+                        ],
+                        "measurement" : "mysql",
+                        "orderByTime" : "ASC",
+                        "policy" : "default",
+                        "query" : "SELECT non_negative_derivative(mean(\"connections\")) FROM \"mysql\" WHERE $timeFilter GROUP BY time($interval) fill(null)",
+                        "rawQuery" : true,
+                        "refId" : "A",
+                        "resultFormat" : "time_series",
+                        "select" : [
+                           [
+                              {
+                                 "params" : [
+                                    "connections"
+                                 ],
+                                 "type" : "field"
+                              },
+                              {
+                                 "params" : [
+                                    "10s"
+                                 ],
+                                 "type" : "non_negative_derivative"
+                              }
+                           ]
+                        ],
+                        "tags" : []
+                     },
+                     {
+                        "alias" : "queries",
+                        "dsType" : "influxdb",
+                        "groupBy" : [
+                           {
+                              "params" : [
+                                 "$interval"
+                              ],
+                              "type" : "time"
+                           },
+                           {
+                              "params" : [
+                                 "null"
+                              ],
+                              "type" : "fill"
+                           }
+                        ],
+                        "measurement" : "mysql",
+                        "orderByTime" : "ASC",
+                        "policy" : "default",
+                        "query" : "SELECT non_negative_derivative(mean(\"queries\")) FROM \"mysql\" WHERE $timeFilter GROUP BY time($interval) fill(null)",
+                        "rawQuery" : true,
+                        "refId" : "B",
+                        "resultFormat" : "time_series",
+                        "select" : [
+                           [
+                              {
+                                 "params" : [
+                                    "queries"
+                                 ],
+                                 "type" : "field"
+                              },
+                              {
+                                 "params" : [
+                                    "10s"
+                                 ],
+                                 "type" : "non_negative_derivative"
+                              }
+                           ]
+                        ],
+                        "tags" : []
+                     }
+                  ],
+                  "thresholds" : [],
+                  "timeFrom" : null,
+                  "timeShift" : null,
+                  "title" : "MySQL Performance",
+                  "tooltip" : {
+                     "shared" : true,
+                     "sort" : 0,
+                     "value_type" : "individual"
+                  },
+                  "type" : "graph",
+                  "xaxis" : {
+                     "buckets" : null,
+                     "mode" : "time",
+                     "name" : null,
+                     "show" : true,
+                     "values" : []
+                  },
+                  "yaxes" : [
+                     {
+                        "format" : "short",
+                        "label" : null,
+                        "logBase" : 1,
+                        "max" : null,
+                        "min" : null,
+                        "show" : true
+                     },
+                     {
+                        "format" : "short",
+                        "label" : null,
+                        "logBase" : 1,
+                        "max" : null,
+                        "min" : null,
+                        "show" : true
+                     }
+                  ]
+               }
+            ],
+            "repeat" : null,
+            "repeatIteration" : null,
+            "repeatRowId" : null,
+            "showTitle" : false,
+            "title" : "Dashboard Row",
+            "titleSize" : "h6"
+         },
+         {
+            "collapse" : false,
+            "height" : 250,
+            "panels" : [],
+            "repeat" : null,
+            "repeatIteration" : null,
+            "repeatRowId" : null,
+            "showTitle" : false,
+            "title" : "Dashboard Row",
+            "titleSize" : "h6"
+         }
+      ],
+      "schemaVersion" : 14,
+      "style" : "dark",
+      "tags" : [],
+      "templating" : {
+         "list" : []
+      },
+      "time" : {
+         "from" : "now-3h",
+         "to" : "now"
+      },
       "timepicker" : {
          "refresh_intervals" : [
             "5s",
@@ -48,395 +680,21 @@
             "30d"
          ]
       },
-      "rows" : [
-         {
-            "repeatRowId" : null,
-            "panels" : [
-               {
-                  "lines" : true,
-                  "renderer" : "flot",
-                  "timeShift" : null,
-                  "span" : 12,
-                  "timeFrom" : null,
-                  "aliasColors" : {},
-                  "linewidth" : 1,
-                  "xaxis" : {
-                     "show" : true,
-                     "values" : [],
-                     "mode" : "time",
-                     "name" : null
-                  },
-                  "datasource" : "InfluxDB",
-                  "thresholds" : [
-                     {
-                        "colorMode" : "critical",
-                        "fill" : true,
-                        "value" : 30,
-                        "line" : true,
-                        "op" : "gt"
-                     }
-                  ],
-                  "yaxes" : [
-                     {
-                        "format" : "s",
-                        "label" : "Response Time (s)",
-                        "max" : null,
-                        "logBase" : 1,
-                        "min" : null,
-                        "show" : true
-                     },
-                     {
-                        "logBase" : 1,
-                        "max" : null,
-                        "label" : "",
-                        "format" : "none",
-                        "show" : false,
-                        "min" : null
-                     }
-                  ],
-                  "alert" : {
-                     "handler" : 1,
-                     "noDataState" : "no_data",
-                     "conditions" : [
-                        {
-                           "reducer" : {
-                              "type" : "avg",
-                              "params" : []
-                           },
-                           "operator" : {
-                              "type" : "and"
-                           },
-                           "evaluator" : {
-                              "params" : [
-                                 30
-                              ],
-                              "type" : "gt"
-                           },
-                           "query" : {
-                              "params" : [
-                                 "A",
-                                 "5m",
-                                 "now"
-                              ],
-                              "model" : {
-                                 "select" : [
-                                    [
-                                       {
-                                          "type" : "field",
-                                          "params" : [
-                                             "response_time"
-                                          ]
-                                       },
-                                       {
-                                          "type" : "mean",
-                                          "params" : []
-                                       }
-                                    ]
-                                 ],
-                                 "groupBy" : [
-                                    {
-                                       "type" : "time",
-                                       "params" : [
-                                          "$interval"
-                                       ]
-                                    },
-                                    {
-                                       "params" : [
-                                          "server"
-                                       ],
-                                       "type" : "tag"
-                                    },
-                                    {
-                                       "type" : "fill",
-                                       "params" : [
-                                          "linear"
-                                       ]
-                                    }
-                                 ],
-                                 "measurement" : "http_response",
-                                 "query" : "SELECT mean(\"response_time\") FROM \"http_response\" WHERE $timeFilter GROUP BY time($interval), \"server\"",
-                                 "dsType" : "influxdb",
-                                 "resultFormat" : "time_series",
-                                 "tags" : [],
-                                 "refId" : "A",
-                                 "policy" : "default",
-                                 "alias" : "$tag_server",
-                                 "rawQuery" : false
-                              },
-                              "datasourceId" : 1
-                           },
-                           "type" : "query"
-                        }
-                     ],
-                     "message" : "HTTP server is down!",
-                     "notifications" : [
-                        {
-                           "id" : 1
-                        }
-                     ],
-                     "executionErrorState" : "alerting",
-                     "name" : "HTTP Performance alert",
-                     "frequency" : "60s"
-                  },
-                  "targets" : [
-                     {
-                        "measurement" : "http_response",
-                        "select" : [
-                           [
-                              {
-                                 "params" : [
-                                    "response_time"
-                                 ],
-                                 "type" : "field"
-                              },
-                              {
-                                 "type" : "mean",
-                                 "params" : []
-                              }
-                           ]
-                        ],
-                        "groupBy" : [
-                           {
-                              "type" : "time",
-                              "params" : [
-                                 "$interval"
-                              ]
-                           },
-                           {
-                              "params" : [
-                                 "server"
-                              ],
-                              "type" : "tag"
-                           },
-                           {
-                              "params" : [
-                                 "linear"
-                              ],
-                              "type" : "fill"
-                           }
-                        ],
-                        "policy" : "default",
-                        "alias" : "$tag_server",
-                        "rawQuery" : false,
-                        "query" : "SELECT mean(\"response_time\") FROM \"http_response\" WHERE $timeFilter GROUP BY time($interval), \"server\"",
-                        "dsType" : "influxdb",
-                        "resultFormat" : "time_series",
-                        "refId" : "A",
-                        "tags" : []
-                     }
-                  ],
-                  "links" : [],
-                  "title" : "HTTP Performance",
-                  "points" : false,
-                  "stack" : false,
-                  "type" : "graph",
-                  "nullPointMode" : "null",
-                  "percentage" : false,
-                  "description" : "The response time of the CPAN Testers web applications",
-                  "steppedLine" : false,
-                  "seriesOverrides" : [],
-                  "pointradius" : 1,
-                  "bars" : false,
-                  "id" : 1,
-                  "legend" : {
-                     "current" : false,
-                     "values" : false,
-                     "avg" : false,
-                     "show" : true,
-                     "rightSide" : false,
-                     "max" : false,
-                     "total" : false,
-                     "alignAsTable" : false,
-                     "min" : false
-                  },
-                  "tooltip" : {
-                     "sort" : 2,
-                     "value_type" : "individual",
-                     "shared" : true
-                  },
-                  "fill" : 1
-               }
-            ],
-            "title" : "HTTP",
-            "repeatIteration" : null,
-            "repeat" : null,
-            "showTitle" : false,
-            "height" : "250px",
-            "titleSize" : "h6",
-            "collapse" : false
-         },
-         {
-            "repeat" : null,
-            "showTitle" : false,
-            "height" : 250,
-            "titleSize" : "h6",
-            "collapse" : false,
-            "repeatRowId" : null,
-            "title" : "Dashboard Row",
-            "panels" : [
-               {
-                  "linewidth" : 1,
-                  "aliasColors" : {},
-                  "timeFrom" : null,
-                  "span" : 12,
-                  "timeShift" : null,
-                  "renderer" : "flot",
-                  "lines" : true,
-                  "links" : [],
-                  "targets" : [
-                     {
-                        "alias" : "connections",
-                        "rawQuery" : true,
-                        "policy" : "default",
-                        "resultFormat" : "time_series",
-                        "tags" : [],
-                        "refId" : "A",
-                        "query" : "SELECT non_negative_derivative(mean(\"connections\")) FROM \"mysql\" WHERE $timeFilter GROUP BY time($interval) fill(null)",
-                        "dsType" : "influxdb",
-                        "measurement" : "mysql",
-                        "select" : [
-                           [
-                              {
-                                 "type" : "field",
-                                 "params" : [
-                                    "connections"
-                                 ]
-                              },
-                              {
-                                 "params" : [
-                                    "10s"
-                                 ],
-                                 "type" : "non_negative_derivative"
-                              }
-                           ]
-                        ],
-                        "groupBy" : [
-                           {
-                              "params" : [
-                                 "$interval"
-                              ],
-                              "type" : "time"
-                           },
-                           {
-                              "type" : "fill",
-                              "params" : [
-                                 "null"
-                              ]
-                           }
-                        ]
-                     },
-                     {
-                        "measurement" : "mysql",
-                        "select" : [
-                           [
-                              {
-                                 "params" : [
-                                    "queries"
-                                 ],
-                                 "type" : "field"
-                              },
-                              {
-                                 "type" : "non_negative_derivative",
-                                 "params" : [
-                                    "10s"
-                                 ]
-                              }
-                           ]
-                        ],
-                        "groupBy" : [
-                           {
-                              "params" : [
-                                 "$interval"
-                              ],
-                              "type" : "time"
-                           },
-                           {
-                              "type" : "fill",
-                              "params" : [
-                                 "null"
-                              ]
-                           }
-                        ],
-                        "alias" : "queries",
-                        "rawQuery" : true,
-                        "policy" : "default",
-                        "resultFormat" : "time_series",
-                        "tags" : [],
-                        "refId" : "B",
-                        "query" : "SELECT non_negative_derivative(mean(\"queries\"), 10s) FROM \"mysql\" WHERE $timeFilter GROUP BY time($interval) fill(null)",
-                        "dsType" : "influxdb"
-                     }
-                  ],
-                  "thresholds" : [],
-                  "yaxes" : [
-                     {
-                        "logBase" : 1,
-                        "max" : null,
-                        "format" : "short",
-                        "label" : null,
-                        "min" : null,
-                        "show" : true
-                     },
-                     {
-                        "logBase" : 1,
-                        "max" : null,
-                        "format" : "short",
-                        "label" : null,
-                        "min" : null,
-                        "show" : true
-                     }
-                  ],
-                  "xaxis" : {
-                     "values" : [],
-                     "mode" : "time",
-                     "name" : null,
-                     "show" : true
-                  },
-                  "datasource" : null,
-                  "percentage" : false,
-                  "nullPointMode" : "null",
-                  "type" : "graph",
-                  "stack" : false,
-                  "points" : false,
-                  "title" : "MySQL Performance",
-                  "fill" : 1,
-                  "tooltip" : {
-                     "value_type" : "individual",
-                     "shared" : true,
-                     "sort" : 0
-                  },
-                  "bars" : false,
-                  "legend" : {
-                     "current" : false,
-                     "avg" : false,
-                     "max" : false,
-                     "values" : false,
-                     "min" : false,
-                     "show" : true,
-                     "total" : false
-                  },
-                  "id" : 2,
-                  "pointradius" : 5,
-                  "steppedLine" : false,
-                  "seriesOverrides" : []
-               }
-            ],
-            "repeatIteration" : null
-         }
-      ],
-      "time" : {
-         "to" : "now",
-         "from" : "now-3h"
-      },
-      "schemaVersion" : 14,
-      "graphTooltip" : 0,
-      "templating" : {
-         "list" : []
-      },
-      "links" : [],
-      "refresh" : "10s",
-      "annotations" : {
-         "list" : []
-      }
+      "timezone" : "browser",
+      "title" : "Health",
+      "version" : 2
+   },
+   "meta" : {
+      "canEdit" : true,
+      "canSave" : true,
+      "canStar" : true,
+      "created" : "2017-05-31T15:08:51-07:00",
+      "createdBy" : "admin",
+      "expires" : "0001-01-01T00:00:00Z",
+      "slug" : "health",
+      "type" : "db",
+      "updated" : "2017-05-31T16:18:13-07:00",
+      "updatedBy" : "admin",
+      "version" : 2
    }
 }
