@@ -407,15 +407,30 @@ task prepare_monitor =>
 
             Rex::Logger::info( 'Installing Grafana' );
             pkg 'grafana', ensure => "present";
-            service 'grafana-server', ensure => 'started';
 
             Rex::Logger::info( 'Installing Fluentd' );
             pkg 'td-agent', ensure => 'present';
-            service 'td-agent', ensure => 'started';
 
             Rex::Logger::info( 'Installing InfluxDB' );
             pkg 'influxdb', ensure => 'present';
+
+            Rex::Logger::info( 'Installing Telegraf' );
+            pkg 'telegraf', ensure => 'present';
+
+            Rex::Logger::info( 'Configuring telegraf' );
+            file '/etc/telegraf/telegraf.d/http.conf',
+                owner => 'root',
+                group => 'root',
+                mode => '666',
+                source => 'etc/telegraf/http.conf',
+                on_change => sub { service telegraf => 'stop' },
+                ;
+
+            Rex::Logger::info( 'Starting services' );
+            service 'grafana-server', ensure => 'started';
+            service 'td-agent', ensure => 'started';
             service 'influxdb', ensure => 'started';
+            service 'telegraf', ensure => 'started';
         };
     };
 
