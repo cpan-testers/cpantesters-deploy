@@ -241,7 +241,9 @@ task deploy_www =>
                     source => "etc/apache2/vhost/$site.conf";
                 run 'a2ensite ' . $site;
             }
+            Rex::Logger::info( "Disabling Debian default site" );
             run 'a2dissite 000-default';
+            Rex::Logger::info( "Restarting Apache..." );
             service apache2 => 'restart';
         };
     };
