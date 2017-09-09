@@ -8,7 +8,7 @@
       "gnetId" : null,
       "graphTooltip" : 0,
       "hideControls" : false,
-      "id" : 3,
+      "id" : 5,
       "links" : [],
       "refresh" : "10s",
       "rows" : [
@@ -22,7 +22,7 @@
                         {
                            "evaluator" : {
                               "params" : [
-                                 30
+                                 60
                               ],
                               "type" : "gt"
                            },
@@ -30,55 +30,9 @@
                               "type" : "and"
                            },
                            "query" : {
-                              "datasourceId" : 1,
-                              "model" : {
-                                 "alias" : "$tag_server",
-                                 "dsType" : "influxdb",
-                                 "groupBy" : [
-                                    {
-                                       "params" : [
-                                          "$interval"
-                                       ],
-                                       "type" : "time"
-                                    },
-                                    {
-                                       "params" : [
-                                          "server"
-                                       ],
-                                       "type" : "tag"
-                                    },
-                                    {
-                                       "params" : [
-                                          "linear"
-                                       ],
-                                       "type" : "fill"
-                                    }
-                                 ],
-                                 "measurement" : "http_response",
-                                 "policy" : "default",
-                                 "query" : "SELECT mean(\"response_time\") FROM \"http_response\" WHERE $timeFilter GROUP BY time($interval), \"server\"",
-                                 "rawQuery" : false,
-                                 "refId" : "A",
-                                 "resultFormat" : "time_series",
-                                 "select" : [
-                                    [
-                                       {
-                                          "params" : [
-                                             "response_time"
-                                          ],
-                                          "type" : "field"
-                                       },
-                                       {
-                                          "params" : [],
-                                          "type" : "mean"
-                                       }
-                                    ]
-                                 ],
-                                 "tags" : []
-                              },
                               "params" : [
                                  "A",
-                                 "5m",
+                                 "10m",
                                  "now"
                               ]
                            },
@@ -92,14 +46,9 @@
                      "executionErrorState" : "alerting",
                      "frequency" : "60s",
                      "handler" : 1,
-                     "message" : "HTTP server is down!",
                      "name" : "HTTP Performance alert",
                      "noDataState" : "no_data",
-                     "notifications" : [
-                        {
-                           "id" : 1
-                        }
-                     ]
+                     "notifications" : []
                   },
                   "aliasColors" : {},
                   "bars" : false,
@@ -158,6 +107,7 @@
                            }
                         ],
                         "measurement" : "http_response",
+                        "orderByTime" : "ASC",
                         "policy" : "default",
                         "query" : "SELECT mean(\"response_time\") FROM \"http_response\" WHERE $timeFilter GROUP BY time($interval), \"server\"",
                         "rawQuery" : false,
@@ -186,7 +136,7 @@
                         "fill" : true,
                         "line" : true,
                         "op" : "gt",
-                        "value" : 30
+                        "value" : 60
                      }
                   ],
                   "timeFrom" : null,
@@ -307,7 +257,7 @@
                         "groupBy" : [
                            {
                               "params" : [
-                                 "$__interval"
+                                 "$interval"
                               ],
                               "type" : "time"
                            },
@@ -419,7 +369,7 @@
                         "groupBy" : [
                            {
                               "params" : [
-                                 "$__interval"
+                                 "$interval"
                               ],
                               "type" : "time"
                            },
@@ -632,17 +582,6 @@
             "showTitle" : false,
             "title" : "Dashboard Row",
             "titleSize" : "h6"
-         },
-         {
-            "collapse" : false,
-            "height" : 250,
-            "panels" : [],
-            "repeat" : null,
-            "repeatIteration" : null,
-            "repeatRowId" : null,
-            "showTitle" : false,
-            "title" : "Dashboard Row",
-            "titleSize" : "h6"
          }
       ],
       "schemaVersion" : 14,
@@ -681,20 +620,20 @@
          ]
       },
       "timezone" : "browser",
-      "title" : "Health",
-      "version" : 2
+      "title" : "Web/DB",
+      "version" : 1
    },
    "meta" : {
       "canEdit" : true,
       "canSave" : true,
       "canStar" : true,
-      "created" : "2017-05-31T15:08:51-07:00",
+      "created" : "2017-08-26T15:11:52-07:00",
       "createdBy" : "admin",
       "expires" : "0001-01-01T00:00:00Z",
-      "slug" : "health",
+      "slug" : "web-db",
       "type" : "db",
-      "updated" : "2017-05-31T16:18:13-07:00",
+      "updated" : "2017-08-26T15:15:59-07:00",
       "updatedBy" : "admin",
-      "version" : 2
+      "version" : 1
    }
 }

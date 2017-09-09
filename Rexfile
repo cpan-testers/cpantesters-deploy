@@ -141,6 +141,11 @@ my %sites = (
     www => [qw( beta.cpantesters.org )], # www.cpantesters.org
 );
 
+my @grafana_dashboards = (qw(
+    Reports
+    Web-DB
+));
+
 #######################################################################
 # Environments
 # The Vagrant VM for development purposes
@@ -527,7 +532,7 @@ task export_dashboards =>
         my $port = get 'monitor_port';
         my $user = get 'monitor_user';
         my $pass = get 'monitor_password';
-        for my $dashboard ( qw( Health ) ) {
+        for my $dashboard ( @grafana_dashboards ) {
             my $res = $http->get( sprintf 'http://%s:%s@%s:%d/api/dashboards/db/%s', $user, $pass, $host, $port, $dashboard );
             if ( !$res->{success} ) {
                 Rex::Logger::info( sprintf( 'Failed to get dashboard %s: %s', $dashboard, $res->{content} ), 'error' );
@@ -555,7 +560,7 @@ task import_dashboards =>
         my $port = get 'monitor_port';
         my $user = get 'monitor_user';
         my $pass = get 'monitor_password';
-        for my $dashboard ( qw( Health ) ) {
+        for my $dashboard ( @grafana_dashboards ) {
             my $text = file_read( sprintf 'etc/grafana/dashboards/%s.json', $dashboard )->read_all;
             my $json = $JSON->decode( $text );
             my $slug = $json->{meta}{slug};
