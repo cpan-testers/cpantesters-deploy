@@ -358,6 +358,13 @@ task prepare_user =>
             };
             run 'systemctl enable runsvdir';
             run 'systemctl start runsvdir';
+
+            Rex::Logger::info( 'Preparing crontab environment' );
+            cron env => 'cpantesters' => add => {
+                PERL5LIB => '/home/cpantesters/perl5/lib/perl5',
+                PATH => '/home/cpantesters/perl5/bin:/opt/local/perlbrew/bin:/opt/local/perlbrew/perls/perl-5.24.0/bin:/usr/local/bin:/usr/bin:/bin',
+                MAILTO => 'doug@preaction.me',
+            };
         };
     };
 
