@@ -102,7 +102,7 @@ my $JSON = JSON::PP->new->ascii->pretty->canonical;
 
 #######################################################################
 # Groups
-group api => 'cpantesters3.dh.bytemark.co.uk';
+group api => qw( cpantesters3.dh.bytemark.co.uk cpantesters1.barnyard.co.uk );
 group backend => 'cpantesters3.dh.bytemark.co.uk';
 group web => 'cpantesters3.dh.bytemark.co.uk';
 group monitor => 'monitor.preaction.me';
@@ -119,7 +119,9 @@ set perlbrew_root => '/opt/local/perlbrew';
 set common_packages => [ qw/
     build-essential git perl-doc perl vim logrotate ack-grep ntp
 / ];
-set api_packages => [qw/ apache2 runit perlbrew libmysqlclient-dev /];
+
+my @web_packages = qw/ apache2 runit perlbrew libmysqlclient-dev /;
+set api_packages => \@web_packages;
 
 set database_host => '216.246.80.45';
 set database_name => 'cpanstats';
@@ -133,6 +135,11 @@ set monitor_password => 'YKn-sfS-a3U-KFs';
 set monitor_mysql_user => 'monitor';
 set monitor_mysql_password => 'fQZsTa6nvS83zjX';
 set monitor_mysql_hosts => [qw( 216.246.80.45 216.246.80.46 )];
+
+my %sites = (
+    api => [qw( api.cpantesters.org metabase.cpantesters.org )],
+    www => [qw( beta.cpantesters.org )], # www.cpantesters.org
+);
 
 #######################################################################
 # Environments
@@ -215,37 +222,9 @@ task prepare_api =>
             run 'a2enmod ' . $_ for qw( proxy proxy_http proxy_wstunnel rewrite );
         };
 
-        run_task 'deploy_www', on => connection->server;
+        _deploy_group_sites( "api" );
         run_task 'prepare_perl', on => connection->server;
         run_task 'prepare_user', on => connection->server;
-    };
-
-=head2 deploy_www
-
-    rex deploy_www
-
-Deploy the Apache configuration files which reverse proxy to the individual
-Mojolicious web applications.
-
-=cut
-
-desc 'Deploy the WWW config files';
-task deploy_www =>
-    group => [qw( api )],
-    sub {
-        ensure_sudo_password();
-        sudo sub {
-            for my $site ( qw( api.cpantesters.org metabase.cpantesters.org beta.cpantesters.org ) ) {
-                Rex::Logger::info( "Installing reverse proxy for " . $site );
-                file "/etc/apache2/sites-available/$site.conf",
-                    source => "etc/apache2/vhost/$site.conf";
-                run 'a2ensite ' . $site;
-            }
-            Rex::Logger::info( "Disabling Debian default site" );
-            run 'a2dissite 000-default';
-            Rex::Logger::info( "Restarting Apache..." );
-            service apache2 => 'restart';
-        };
     };
 
 =head2 prepare_perl
@@ -619,5 +598,26 @@ sub ensure_sudo_password {
     sudo_password ReadLine(0);
     ReadMode('restore');
     print "\n";
+}
+
+=head2 _deploy_group_sites
+
+Deploy the Apache configuration files for a given group. These are configured
+in the C<%sites> hash, above.
+
+=cut
+
+sub _deploy_group_sites {
+    my ( $group ) = @_;
+    for my $site ( @{ $sites{ $group } } ) {
+        Rex::Logger::info( "Installing reverse proxy for " . $site );
+        file "/etc/apache2/sites-available/$site.conf",
+            source => "etc/apache2/vhost/$site.conf";
+        run 'a2ensite ' . $site;
+    }
+    Rex::Logger::info( "Disabling Debian default site" );
+    run 'a2dissite 000-default';
+    Rex::Logger::info( "Restarting Apache..." );
+    service apache2 => 'restart';
 }
 
