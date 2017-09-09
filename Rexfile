@@ -108,7 +108,7 @@ group web => 'cpantesters3.dh.bytemark.co.uk';
 group monitor => 'monitor.preaction.me';
 
 # The prod database is _not_ accessible via SSH from the outside world
-group database => '216.246.80.45';
+group database => '216.246.80.46';
 
 #######################################################################
 # Settings
@@ -123,7 +123,7 @@ set common_packages => [ qw/
 my @web_packages = qw/ apache2 runit perlbrew libmysqlclient-dev /;
 set api_packages => \@web_packages;
 
-set database_host => '216.246.80.45';
+set database_host => '216.246.80.46';
 set database_name => 'cpanstats';
 set database_user => 'cpantesters';
 set database_password => 'Md5syMxdsKcf6n6eK';
