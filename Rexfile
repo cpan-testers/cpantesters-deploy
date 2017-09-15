@@ -106,6 +106,7 @@ group api => qw( cpantesters3.dh.bytemark.co.uk cpantesters1.barnyard.co.uk );
 group backend => 'cpantesters3.dh.bytemark.co.uk';
 group web => 'cpantesters3.dh.bytemark.co.uk';
 group monitor => 'monitor.preaction.me';
+group legacy => 'cpantesters3.dh.bytemark.co.uk';
 
 # The prod database is _not_ accessible via SSH from the outside world
 group database => '216.246.80.46';
@@ -591,6 +592,69 @@ task import_dashboards =>
             }
         }
     };
+
+=head2 update_legacy_config
+
+This updates the configuration for the legacy applications to ensure they
+are using the correct database.
+
+=cut
+
+desc 'Update the config for the legacy applications to ensure they use the correct database';
+task update_legacy_config =>
+    group => [qw( legacy )],
+    sub {
+        my %legacy_config = (
+            '/media/backend/cpantesters/generate' => {
+                config => [qw(
+                    data/parse.ini data/regenerate.ini
+                    data/settings.ini data/tail.ini
+                )],
+            },
+            '/media/backend/cpantesters/reports-mailer' => {
+                config => [qw(
+                    data/preferences-daily.ini data/preferences.ini
+                    data/preferences-weekly.ini
+                )],
+            },
+            '/media/backend/cpantesters/cpanstats' => {
+                config => [qw( data/addresses.ini data/settings.ini )],
+            },
+            '/media/backend/cpantesters/release' => {
+                config => [qw( data/release.ini )],
+            },
+            '/media/backend/cpantesters/uploads' => {
+                config => [qw( data/uploads.ini )],
+            },
+            '/media/web/www/cpanadmin' => {
+                config => [qw( cgi-bin/config/settings.ini )],
+            },
+            '/media/web/www/cpanprefs' => {
+                config => [qw( cgi-bin/config/settings.ini )],
+            },
+            '/media/web/www/reports' => {
+                config => [qw( cgi-bin/config/settings.ini )],
+            },
+        );
+
+        my $database = get 'database_host';
+        my $dbuser = get 'database_user';
+        my $dbpass = get 'database_password';
+
+        ensure_sudo_password();
+        sudo sub {
+            for my $root ( keys %legacy_config ) {
+                for my $file ( @{ $legacy_config{ $root }{ config } } ) {
+                    my $path = join "/", $root, $file;
+                    Rex::Logger::info( sprintf 'Checking %s database settings...', $path );
+                    sed( qr{dbhost=\d+\.\d+\.\d+\.\d+}, "dbhost=$database", $path );
+                    sed( qr{dbuser=\w+}, "dbuser=$dbuser", $path );
+                    sed( qr{dbpass=.+}, "dbpass=$dbpass", $path );
+                }
+            }
+        };
+    };
+
 #######################################################################
 
 =head1 Subroutines
