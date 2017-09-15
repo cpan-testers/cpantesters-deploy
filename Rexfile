@@ -482,6 +482,63 @@ task prepare_monitor =>
             service 'td-agent', ensure => 'started';
             service 'influxdb', ensure => 'started';
             service 'telegraf', ensure => 'started';
+
+            Rex::Logger::info( 'Preparing user profile for Perl' );
+            for my $file ( qw( .profile .bash_profile ) ) {
+                file '~/' . $file,
+                    content => template( 'etc/profile.tpl' ),
+                    owner => 'root',
+                    group => 'root',
+                    mode => '644',
+                    ;
+            }
+
+            Rex::Logger::info( 'Installing Yertl' );
+            run 'cpan ETL::Yertl';
+
+            Rex::Logger::info( 'Configuring Yertl' );
+            my $dbname = get 'database_name';
+            my $dbhost = get 'database_host';
+            my $dbuser = get 'monitor_mysql_user';
+            my $dbpass = get 'monitor_mysql_password';
+            run "source ~/.profile; ysql --config mysql --driver mysql --database $dbname --host $dbhost --user $dbuser --password $dbpass";
+
+            Rex::Logger::info( 'Configuring Cron Jobs' );
+            cron env => 'root' => add => {
+                MAILTO => 'doug@preaction.me',
+                PERL5LIB => '/root/perl5/lib/perl5',
+                PATH => '/root/perl5/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+                HOME => '/root',
+            };
+
+            my %metrics = (
+                '*' => {
+                    "minion total_jobs" => q{--count minion_jobs},
+                    "minion inactive_jobs" => q{--count minion_jobs --where 'state="inactive"'},
+                    "minion finished_jobs" => q{--count minion_jobs --where 'state="finished"'},
+                    "minion failed_jobs" => q{--count minion_jobs --where 'state="failed"'},
+                },
+                5 => {
+                    "cpantesters report_count" => q{--count test_report},
+                    "cpantesters stats_count" => q{--count cpanstats},
+                },
+            );
+            for my $time ( keys %metrics ) {
+                my $minute = $time eq '*' ? '*' : '*/' . $time;
+                for my $metric ( keys %{ $metrics{ $time } } ) {
+                    my $ysql = "ysql mysql $metrics{ $time }{ $metric }";
+                    my $yts = "yts influxdb://localhost/telegraf $metric";
+                    cron_entry $metric,
+                        minute => $minute,
+                        hour => '*',
+                        day_of_month => '*',
+                        month => '*',
+                        day_of_week => '*',
+                        ensure => 'present',
+                        command => "$ysql | $yts",
+                        ;
+                }
+            }
         };
     };
 
