@@ -44,7 +44,7 @@ domain = <%= $monitor_host %>
 
 # The full public facing url you use in browser, used for redirects and emails
 # If you use reverse proxy and sub path specify full url (with sub path)
-root_url = http://<%= $monitor_host %>:<%= $monitor_port %>
+root_url = http://<%= $monitor_host %>/grafana
 
 # Log web requests
 ;router_logging = false
@@ -178,7 +178,7 @@ allow_org_create = false
 
 [auth]
 # Set to true to disable (hide) the login form, useful if you use OAuth, defaults to false
-;disable_login_form = false
+disable_login_form = true
 
 #################################### Anonymous Auth ##########################
 [auth.anonymous]
@@ -193,16 +193,16 @@ allow_org_create = false
 
 #################################### Github Auth ##########################
 [auth.github]
-;enabled = false
-;allow_sign_up = true
-;client_id = some_id
-;client_secret = some_secret
-;scopes = user:email,read:org
+enabled = true
+allow_sign_up = true
+client_id = 5a7b9dc9cd6d435bf04d
+client_secret = 77d2d436322561bc83c8b4243074838d73622cb6
+scopes = user:email,read:org
 ;auth_url = https://github.com/login/oauth/authorize
 ;token_url = https://github.com/login/oauth/access_token
 ;api_url = https://api.github.com/user
 ;team_ids =
-;allowed_organizations =
+allowed_organizations = cpan-testers metacpan
 
 #################################### Google Auth ##########################
 [auth.google]

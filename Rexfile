@@ -129,7 +129,7 @@ set database_name => 'cpanstats';
 set database_user => 'cpantesters';
 set database_password => 'Md5syMxdsKcf6n6eK';
 
-set monitor_host => 'monitor.preaction.me';
+set monitor_host => 'status.cpantesters.org';
 set monitor_port => '3000';
 set monitor_user => 'admin';
 set monitor_password => 'YKn-sfS-a3U-KFs';
@@ -140,6 +140,7 @@ set monitor_mysql_hosts => [qw( 216.246.80.45 216.246.80.46 )];
 my %sites = (
     api => [qw( api.cpantesters.org metabase.cpantesters.org )],
     www => [qw( beta.cpantesters.org )], # www.cpantesters.org
+    monitor => [qw( status.cpantesters.org )],
 );
 
 my @grafana_dashboards = (qw(
@@ -431,6 +432,9 @@ task prepare_monitor =>
             Rex::Logger::info( 'Ensuring Telegraf is installed' );
             pkg 'telegraf', ensure => 'present';
 
+            Rex::Logger::info( 'Ensuring Apache is installed' );
+            pkg 'apache2', ensure => 'present';
+
             Rex::Logger::info( 'Configuring postfix for local-only mail' );
             append_or_amend_line '/etc/postfix/main.cf',
                 regexp => qr{^\s*inet_interfaces\s*=},
@@ -471,10 +475,25 @@ task prepare_monitor =>
                 group => 'grafana',
                 mode => '640',
                 content => template( 'etc/grafana/grafana.ini.tpl',
-                    ( map { $_ => get "monitor_$_" } qw( host user name password ) ),
+                    ( map {; $_ => get "monitor_$_" } qw( host user name password ) ),
                 ),
                 on_change => sub { service 'grafana-server' => 'stop' },
                 ;
+
+            Rex::Logger::info( 'Enabling Apache modules' );
+            run 'a2enmod ' . $_ for qw( proxy proxy_http proxy_wstunnel rewrite );
+
+            Rex::Logger::info( 'Configuring Apache' );
+            _deploy_group_sites( 'monitor' );
+
+            Rex::Logger::info( 'Syncing Apache site' );
+            file '/var/www/status',
+                ensure => 'directory',
+                owner => 'www-data',
+                group => 'www-data',
+                mode => '775', # u+rwx go-rwx
+                ;
+            sync_up 'var/www/status', '/var/www/status';
 
             Rex::Logger::info( 'Starting services' );
             service 'postfix', ensure => 'started';
@@ -482,6 +501,7 @@ task prepare_monitor =>
             service 'td-agent', ensure => 'started';
             service 'influxdb', ensure => 'started';
             service 'telegraf', ensure => 'started';
+            service 'apache2', ensure => 'started';
 
             Rex::Logger::info( 'Preparing user profile for Perl' );
             for my $file ( qw( .profile .bash_profile ) ) {
