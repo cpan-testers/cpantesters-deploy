@@ -529,6 +529,7 @@ task prepare_monitor =>
                     my $ysql = "ysql mysql $metrics{ $time }{ $metric }";
                     my $yts = "yts influxdb://localhost/telegraf $metric";
                     cron_entry $metric,
+                        user => 'root',
                         minute => $minute,
                         hour => '*',
                         day_of_month => '*',
