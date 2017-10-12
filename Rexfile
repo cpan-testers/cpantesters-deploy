@@ -514,7 +514,7 @@ task prepare_monitor =>
             }
 
             Rex::Logger::info( 'Installing Yertl' );
-            run 'cpan ETL::Yertl';
+            run 'cpan ETL::Yertl@0.33';
 
             Rex::Logger::info( 'Configuring Yertl' );
             my $dbname = get 'database_name';
@@ -533,21 +533,21 @@ task prepare_monitor =>
 
             my %metrics = (
                 '*' => {
-                    "minion total_jobs" => q{--count minion_jobs},
-                    "minion inactive_jobs" => q{--count minion_jobs --where 'state="inactive"'},
-                    "minion finished_jobs" => q{--count minion_jobs --where 'state="finished"'},
-                    "minion failed_jobs" => q{--count minion_jobs --where 'state="failed"'},
+                    "telegraf.minion.total_jobs" => q{--count minion_jobs},
+                    "telegraf.minion.inactive_jobs" => q{--count minion_jobs --where 'state="inactive"'},
+                    "telegraf.minion.finished_jobs" => q{--count minion_jobs --where 'state="finished"'},
+                    "telegraf.minion.failed_jobs" => q{--count minion_jobs --where 'state="failed"'},
                 },
                 5 => {
-                    "cpantesters report_count" => q{--count test_report},
-                    "cpantesters stats_count" => q{--count cpanstats},
+                    "telegraf.cpantesters.report_count" => q{--count test_report},
+                    "telegraf.cpantesters.stats_count" => q{--count cpanstats},
                 },
             );
             for my $time ( keys %metrics ) {
                 my $minute = $time eq '*' ? '*' : '*/' . $time;
                 for my $metric ( keys %{ $metrics{ $time } } ) {
                     my $ysql = "ysql mysql $metrics{ $time }{ $metric }";
-                    my $yts = "yts influxdb://localhost/telegraf $metric";
+                    my $yts = "yts influxdb://localhost $metric";
                     cron_entry $metric,
                         user => 'root',
                         minute => $minute,
