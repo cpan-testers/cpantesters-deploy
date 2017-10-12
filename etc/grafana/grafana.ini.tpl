@@ -267,7 +267,7 @@ enabled = true
 ;cert_file =
 ;key_file =
 ;skip_verify = false
-from_address = admin@cpantesters.org
+from_address = grafana@cpantesters.org
 
 [emails]
 ;welcome_email_on_sign_up = false
