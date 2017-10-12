@@ -514,7 +514,7 @@ task prepare_monitor =>
             }
 
             Rex::Logger::info( 'Installing Yertl' );
-            run 'cpan ETL::Yertl@0.33';
+            run 'source ~/.profile; cpan ETL::Yertl@0.33';
 
             Rex::Logger::info( 'Configuring Yertl' );
             my $dbname = get 'database_name';
