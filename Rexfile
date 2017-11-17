@@ -353,11 +353,12 @@ task prepare_user =>
                 owner => 'cpantesters',
                 group => 'cpantesters',
                 ;
-            sync_up 'etc/systemd', '/etc/systemd/system', {
-                files => {
-                    mode => 664,
-                },
-            };
+            file '/etc/systemd/runsvdir.service',
+                source => 'etc/systemd/runsvdir.service',
+                mode => 644,
+                owner => 'root',
+                group => 'root',
+                ;
             run 'systemctl enable runsvdir';
             run 'systemctl start runsvdir';
 
