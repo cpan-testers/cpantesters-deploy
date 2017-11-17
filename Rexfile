@@ -733,6 +733,34 @@ task update_legacy_config =>
         };
     };
 
+=head2 reboot
+
+Reboot a server. Each server has a different method of rebooting. This is
+a hard reboot. Only use it when the server is not responding to SSH.
+
+=cut
+
+my %servers = (
+    'cpantesters1.barnyard.co.uk' => [
+        _reboot_xen => 'hetzner.barnyard.co.uk', 'cpantesters1.barnyard.co.uk',
+    ],
+    'cpantesters3.dh.bytemark.co.uk' => [
+        _reboot_bytemark => 'cpantesters3.dhadmin.bytemark.co.uk',
+    ],
+);
+
+task reboot => sub {
+
+};
+
+task _reboot_xen => sub {
+
+};
+
+task _reboot_bytemark => sub {
+
+};
+
 #######################################################################
 
 =head1 Subroutines
