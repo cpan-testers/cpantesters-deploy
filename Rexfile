@@ -60,6 +60,10 @@ The backend daemons and jobs are deployed by L<the
 CPAN::Testers::Backend
 Rexfile|http://github.com/cpan-testers/cpantesters-backend>.
 
+=item cpan
+
+The C<cpan> role prepares a server to be used as a CPAN/BackPAN mirror.
+
 =item web
 
 The C<web> role prepares a server to host the main CPAN Testers website,
@@ -103,10 +107,11 @@ my $JSON = JSON::PP->new->ascii->pretty->canonical;
 #######################################################################
 # Groups
 group api => qw( cpantesters3.dh.bytemark.co.uk cpantesters1.barnyard.co.uk );
-group backend => 'cpantesters3.dh.bytemark.co.uk';
+group backend => 'cpantesters4.dh.bytemark.co.uk';
 group web => 'cpantesters3.dh.bytemark.co.uk';
 group monitor => 'monitor.preaction.me';
 group legacy => 'cpantesters3.dh.bytemark.co.uk';
+group cpan => 'cpantesters4.dh.bytemark.co.uk';
 
 # The prod database is _not_ accessible via SSH from the outside world
 group database => '216.246.80.46';
@@ -118,11 +123,14 @@ set perl_version => '5.24.0';
 set perlbrew_root => '/opt/local/perlbrew';
 
 set common_packages => [ qw/
-    build-essential git perl-doc perl vim logrotate ack-grep ntp
+    build-essential git perl-doc perl vim logrotate ack-grep ntp sudo rsync
+    less
 / ];
 
 my @web_packages = qw/ apache2 runit perlbrew libmysqlclient-dev /;
 set api_packages => \@web_packages;
+set backend_packages => [qw/ runit perlbrew default-libmysqlclient-dev / ];
+set cpan_packages => [qw/ runit perlbrew apache2 / ];
 
 set database_host => '216.246.80.46';
 set database_name => 'cpanstats';
@@ -141,6 +149,7 @@ my %sites = (
     api => [qw( api.cpantesters.org metabase.cpantesters.org )],
     www => [qw( beta.cpantesters.org )], # www.cpantesters.org
     monitor => [qw( status.cpantesters.org )],
+    cpan => [qw( cpan.cpantesters.org backpan.cpantesters.org )],
 );
 
 my @grafana_dashboards = (qw(
@@ -157,6 +166,7 @@ environment vm => sub {
     group database => '192.168.127.127';
     group backend => '192.168.127.127';
     group web => '192.168.127.127';
+    group cpan => '192.168.127.127';
     set 'no_sudo_password' => 1;
     set database_host => '127.0.0.1';
     set monitor_host => '192.168.127.127';
@@ -190,8 +200,11 @@ task prepare =>
     sub {
         ensure_sudo_password();
 
-        Rex::Logger::info( "Checking common packages" );
         sudo sub {
+            Rex::Logger::info( 'Fetching package lists' );
+            update_package_db;
+
+            Rex::Logger::info( "Checking common packages" );
             install package => $_ for @{ get 'common_packages' };
         };
     };
@@ -232,6 +245,187 @@ task prepare_api =>
         _deploy_group_sites( "api" );
         run_task 'prepare_perl', on => connection->server;
         run_task 'prepare_user', on => connection->server;
+    };
+
+=head2 prepare_backend
+
+    rex prepare_backend
+
+Prepare a machine to run the CPAN Testers Backend by installing OS-level
+package requirements (L</prepare>), setting up Perl (L</prepare_perl>),
+setting up a user account (L</prepare_user>), and setting up
+CPAN/BackPAN mirroring (L</prepare_cpan>).
+
+Once the machine is prepared, you can run the C<deploy> task from the
+L<cpantesters-backend|http://github.com/cpan-testers/cpantesters-backend/>
+C<Rexfile>.
+
+=cut
+
+desc 'Prepare the machine to run the CPAN Testers Backend';
+task prepare_backend =>
+    group => [qw( backend )],
+    sub {
+
+        run_task 'prepare', on => connection->server;
+
+        ensure_sudo_password();
+        sudo sub {
+            Rex::Logger::info( "Checking Backend packages" );
+            install package => $_ for @{ get 'backend_packages' };
+
+            Rex::Logger::info( "Disabling system runit" );
+            run 'systemctl stop runit';
+            run 'systemctl disable runit';
+        };
+
+        run_task 'prepare_perl', on => connection->server;
+        run_task 'prepare_user', on => connection->server;
+    };
+
+desc 'Prepare the machine as a CPAN/BackPAN mirror';
+task prepare_cpan =>
+    group => [qw( cpan )],
+    sub {
+        run_task 'prepare', on => connection->server;
+        run_task 'prepare_perl', on => connection->server;
+
+        my $perl_version = get 'perl_version';
+        my $perlbrew_root = get 'perlbrew_root';
+
+        sudo sub {
+            Rex::Logger::info( "Checking CPAN packages" );
+            install package => $_ for @{ get 'cpan_packages' };
+
+            Rex::Logger::info( 'Creating CPAN user' );
+            account cpan =>
+                ensure => 'present',
+                comment => 'CPAN mirror account',
+                crypt_password => '*', # Disable passwords
+                shell => '/bin/bash',
+                create_home => TRUE;
+
+            Rex::Logger::info( 'Setting up cpan user environment' );
+            for my $file ( qw( .profile .bash_profile ) ) {
+                file '/home/cpan/' . $file,
+                    content => template( 'etc/profile.tpl' ),
+                    owner => 'cpan',
+                    group => 'cpan',
+                    mode => '600',
+                    ;
+            }
+
+            Rex::Logger::info( 'Enabling Perl' );
+            run 'sudo -i -u cpan PERLBREW_ROOT=' . $perlbrew_root . ' perlbrew switch perl-' . $perl_version;
+
+            Rex::Logger::info( 'Adding service/ directory' );
+            file '/home/cpan/service',
+                ensure => 'directory',
+                owner => 'cpan',
+                group => 'cpan',
+                ;
+            file '/etc/systemd/system/runsvdir-cpan.service',
+                source => 'etc/systemd/runsvdir-cpan.service',
+                mode => 644,
+                owner => 'root',
+                group => 'root',
+                ;
+            run 'systemctl enable runsvdir-cpan';
+            run 'systemctl start runsvdir-cpan';
+
+            Rex::Logger::info( 'Setting up rsync server' );
+            file '/etc/rsyncd.conf', source => 'etc/rsyncd.conf';
+            run 'systemctl enable rsync';
+            run 'systemctl start rsync';
+
+            Rex::Logger::info( 'Preparing crontab environment' );
+            run 'crontab -u cpan -l || echo "" | crontab -u cpan -';
+            cron env => 'cpan' => add => {
+                PERL5LIB => '/home/cpan/perl5/lib/perl5',
+                PATH => '/home/cpan/perl5/bin:/opt/local/perlbrew/bin:/opt/local/perlbrew/perls/perl-5.24.0/bin:/usr/local/bin:/usr/bin:/bin',
+                MAILTO => 'doug@preaction.me',
+            };
+
+            # Install CPAN mirroring client
+            Rex::Logger::info( 'Installing CPAN mirroring client (rrr-client)' );
+            run 'sudo -u cpan bash -c "source ~/.profile && cpanm JSON File::Rsync::Mirror::Recent"';
+            if ( $? ) {
+                say last_command_output;
+            }
+            file '/home/cpan/CPAN',
+                ensure => 'directory',
+                owner => 'cpan',
+                group => 'cpan',
+                ;
+            file '/home/cpan/BACKPAN',
+                ensure => 'directory',
+                owner => 'cpan',
+                group => 'cpan',
+                ;
+
+            Rex::Logger::info( 'Adding service files to sync CPAN' );
+            file '/home/cpan/service/rrr-client',
+                ensure => 'directory',
+                owner => 'cpan',
+                group => 'cpan',
+                ;
+            file '/home/cpan/service/rrr-client/log',
+                ensure => 'directory',
+                owner => 'cpan',
+                group => 'cpan',
+                ;
+            file '/home/cpan/service/rrr-client/run',
+                source => 'etc/runit/rrr-client/run',
+                owner => 'cpan',
+                group => 'cpan',
+                mode => 755,
+                ;
+            file '/home/cpan/service/rrr-client/log/run',
+                source => 'etc/runit/rrr-client/log/run',
+                owner => 'cpan',
+                group => 'cpan',
+                mode => 755,
+                ;
+            run 'sudo -u cpan sv start /home/cpan/service/rrr-client';
+
+            Rex::Logger::info( 'Adding BackPAN mirror scripts' );
+            file '/home/cpan/var/log',
+                ensure => 'directory',
+                owner => 'cpan',
+                group => 'cpan',
+                ;
+            file '/home/cpan/var/run',
+                ensure => 'directory',
+                owner => 'cpan',
+                group => 'cpan',
+                ;
+            file '/home/cpan/bin',
+                ensure => 'directory',
+                owner => 'cpan',
+                group => 'cpan',
+                ;
+            file '/home/cpan/bin/backpan.sh',
+                source => 'bin/backpan.sh',
+                owner => 'cpan',
+                group => 'cpan',
+                mode => 755,
+                ;
+            cron_entry 'backpan',
+                user => 'cpan',
+                minute => 50,
+                hour => '*',
+                day_of_month => '*',
+                month => '*',
+                day_of_week => '*',
+                ensure => 'present',
+                command => 'backpan.sh',
+                ;
+
+            Rex::Logger::info( 'Configuring Apache2' );
+            _deploy_group_sites( 'cpan' );
+
+        };
+
     };
 
 =head2 prepare_perl
@@ -353,7 +547,7 @@ task prepare_user =>
                 owner => 'cpantesters',
                 group => 'cpantesters',
                 ;
-            file '/etc/systemd/runsvdir.service',
+            file '/etc/systemd/system/runsvdir.service',
                 source => 'etc/systemd/runsvdir.service',
                 mode => 644,
                 owner => 'root',
@@ -363,6 +557,7 @@ task prepare_user =>
             run 'systemctl start runsvdir';
 
             Rex::Logger::info( 'Preparing crontab environment' );
+            run 'crontab -u cpantesters -l || echo "" | crontab -u cpantesters -';
             cron env => 'cpantesters' => add => {
                 PERL5LIB => '/home/cpantesters/perl5/lib/perl5',
                 PATH => '/home/cpantesters/perl5/bin:/opt/local/perlbrew/bin:/opt/local/perlbrew/perls/perl-5.24.0/bin:/usr/local/bin:/usr/bin:/bin',
@@ -525,6 +720,7 @@ task prepare_monitor =>
             run "source ~/.profile; ysql --config mysql --driver mysql --database $dbname --host $dbhost --user $dbuser --password $dbpass";
 
             Rex::Logger::info( 'Configuring Cron Jobs' );
+            run 'crontab -u root -l || echo "" | crontab -u root -';
             cron env => 'root' => add => {
                 MAILTO => 'doug@preaction.me',
                 PERL5LIB => '/root/perl5/lib/perl5',
@@ -765,7 +961,7 @@ in the C<%sites> hash, above.
 sub _deploy_group_sites {
     my ( $group ) = @_;
     for my $site ( @{ $sites{ $group } } ) {
-        Rex::Logger::info( "Installing reverse proxy for " . $site );
+        Rex::Logger::info( "Installing Apache2 config for " . $site );
         file "/etc/apache2/sites-available/$site.conf",
             source => "etc/apache2/vhost/$site.conf";
         run 'a2ensite ' . $site;

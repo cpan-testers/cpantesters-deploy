@@ -1,0 +1,10 @@
+#!/bin/bash
+. /opt/local/perlbrew/etc/bashrc
+eval $( perl -Mlocal::lib )
+
+SRC=cpan-rsync-master.perl.org
+USER=barbie
+DEST=$HOME/CPAN
+export RSYNC_PASSWORD=b5689hbwrtybjk
+
+exec rrr-client --verbose --user $USER --source "$SRC::CPAN/RECENT.recent" --target $DEST

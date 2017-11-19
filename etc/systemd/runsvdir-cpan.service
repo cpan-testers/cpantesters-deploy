@@ -1,0 +1,9 @@
+[Unit]
+Description=Run services for cpan user
+[Service]
+Type=simple
+ExecStart=/usr/bin/runsvdir -P /home/cpan/service
+User=cpan
+Group=cpan
+[Install]
+WantedBy=multi-user.target
