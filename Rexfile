@@ -424,6 +424,13 @@ task prepare_cpan =>
             Rex::Logger::info( 'Configuring Apache2' );
             _deploy_group_sites( 'cpan' );
 
+            Rex::Logger::info( 'Configuring logrotate' );
+            file '/etc/logrotate.d/cpan',
+                source => 'etc/logrotate-cpan.conf',
+                owner => 'root',
+                group => 'root',
+                mode => 644,
+                ;
         };
 
     };
