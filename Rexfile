@@ -342,13 +342,13 @@ task prepare_cpan =>
             run 'crontab -u cpan -l || echo "" | crontab -u cpan -';
             cron env => 'cpan' => add => {
                 PERL5LIB => '/home/cpan/perl5/lib/perl5',
-                PATH => '/home/cpan/perl5/bin:/opt/local/perlbrew/bin:/opt/local/perlbrew/perls/perl-5.24.0/bin:/usr/local/bin:/usr/bin:/bin',
+                PATH => '/home/cpan/bin:/home/cpan/perl5/bin:/opt/local/perlbrew/bin:/opt/local/perlbrew/perls/perl-5.24.0/bin:/usr/local/bin:/usr/bin:/bin',
                 MAILTO => 'doug@preaction.me',
             };
 
             # Install CPAN mirroring client
             Rex::Logger::info( 'Installing CPAN mirroring client (rrr-client)' );
-            run 'sudo -u cpan bash -c "source ~/.profile && cpanm JSON File::Rsync::Mirror::Recent"';
+            run 'sudo -u cpan bash -c "source ~/.profile && cpanm JSON File::Rsync::Mirror::Recent BackPAN::Index::Create"';
             if ( $? ) {
                 say last_command_output;
             }

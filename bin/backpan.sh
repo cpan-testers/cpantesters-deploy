@@ -4,10 +4,11 @@ LOCK=$HOME/var/run/backpan.lock
 CPAN=$HOME/CPAN
 BACKPAN=$HOME/BACKPAN
 LOG=$HOME/var/log/backpan.log
+TMP=$( mktemp -d )
 
 date_format="%Y/%m/%d %H:%M:%S"
 
-cd $BASE
+cd $TMP
 
 if [ -f $LOCK ]
 then
@@ -33,7 +34,10 @@ else
     gzip backpan-releases-by-age-index.txt
     gzip backpan-releases-by-author-index.txt
 
-    mv backpan*index.txt.gz /media/web/BACKPAN
+    mv backpan*index.txt.gz $BACKPAN
+
+    cd $HOME
+    rm -rf $TMP
 
     echo `date +"$date_format"` "STOP" >>$LOG
     rm $LOCK
