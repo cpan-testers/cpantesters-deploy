@@ -4,11 +4,9 @@ LOCK=$HOME/var/run/backpan.lock
 CPAN=$HOME/CPAN
 BACKPAN=$HOME/BACKPAN
 LOG=$HOME/var/log/backpan.log
-TMP=$( mktemp -d )
 
 date_format="%Y/%m/%d %H:%M:%S"
 
-cd $TMP
 
 if [ -f $LOCK ]
 then
@@ -21,6 +19,8 @@ else
     rsync --exclude CHECKSUMS -vrptgx $CPAN/authors/id/ $BACKPAN/authors/id/ >>$LOG 2>&1
 
     echo `date +"$date_format"` "creating BACKPAN indices" >>$LOG
+    TMP=$( mktemp -d )
+    cd $TMP
     create-backpan-index -b=$BACKPAN -o=backpan-full-index.txt
     create-backpan-index -b=$BACKPAN -r -o=backpan-releases-index.txt
     create-backpan-index -b=$BACKPAN -r -order dist -o=backpan-releases-by-dist-index.txt
