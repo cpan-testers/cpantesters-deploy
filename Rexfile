@@ -570,6 +570,19 @@ task prepare_user =>
                 PATH => '/home/cpantesters/perl5/bin:/opt/local/perlbrew/bin:/opt/local/perlbrew/perls/perl-5.24.0/bin:/usr/local/bin:/usr/bin:/bin',
                 MAILTO => 'doug@preaction.me',
             };
+
+            Rex::Logger::info( 'Configuring logrotate' );
+            file '/etc/logrotate.d/cpantesters',
+                source => 'etc/logrotate-cpantesters.conf',
+                owner => 'root',
+                group => 'root',
+                mode => 644,
+                ;
+            file '/home/cpantesters/var/log',
+                ensure => 'directory',
+                owner => 'cpantesters',
+                group => 'cpantesters',
+                ;
         };
     };
 
