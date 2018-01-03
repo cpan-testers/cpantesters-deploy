@@ -54,8 +54,6 @@ The C<backend> role prepares a server as a backend processing machine.
 These machines will join the job processing cluster and run periodic
 cron jobs to process incoming data into useful forms.
 
-XXX: The C<prepare_backend> task is not completed
-
 The backend daemons and jobs are deployed by L<the
 CPAN::Testers::Backend
 Rexfile|http://github.com/cpan-testers/cpantesters-backend>.
