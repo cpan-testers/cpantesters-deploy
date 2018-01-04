@@ -104,6 +104,10 @@ my $JSON = JSON::PP->new->ascii->pretty->canonical;
 
 #######################################################################
 # Groups
+group all => qw(
+    cpantesters3.dh.bytemark.co.uk cpantesters4.dh.bytemark.co.uk
+    cpantesters1.barnyard.co.uk monitor.preaction.me
+);
 group api => qw( cpantesters3.dh.bytemark.co.uk cpantesters1.barnyard.co.uk );
 group backend => 'cpantesters4.dh.bytemark.co.uk';
 group web => 'cpantesters3.dh.bytemark.co.uk';
@@ -204,6 +208,10 @@ task prepare =>
 
             Rex::Logger::info( "Checking common packages" );
             install package => $_ for @{ get 'common_packages' };
+
+            Rex::Logger::info( "Adding `cpantesters` to sudo" );
+            append_if_no_such_line '/etc/sudoers',
+                'ALL ALL=(cpantesters) NOPASSWD: ALL';
         };
     };
 
@@ -582,6 +590,60 @@ task prepare_user =>
                 group => 'cpantesters',
                 ;
         };
+    };
+
+=head2 add_user
+
+    rex add_user --user=<user> [--root=1]
+
+Add a user account to the given box. The user will be given sudo access to the
+C<cpantesters> user. If the C<--root> option is given, the user will be given
+full sudo privileges.
+
+=cut
+
+task add_user =>
+    group => [qw( all )],
+    sub {
+        my ( $opt ) = @_;
+        my ( $user, $root ) = @{$opt}{qw( user root )};
+        if ( !$user ) {
+            die "User is required";
+        }
+        ensure_sudo_password();
+        sudo sub {
+            create_user(
+                $user,
+                password => '123qwe',
+                shell => '/bin/bash',
+                create_home => TRUE,
+            );
+            if ( $root ) {
+                append_if_no_such_line '/etc/sudoers',
+                    "$user ALL=(ALL:ALL) ALL";
+            }
+        };
+    };
+
+=head2 remove_user
+
+    rex remove_user --user=<user>
+
+Remove a user account from the given box.
+
+=cut
+
+task remove_user =>
+    group => [qw( all )],
+    sub {
+        my ( $opt ) = @_;
+        my ( $user ) = @{$opt}{qw( user )};
+        if ( !$user ) {
+            die "User is required";
+        }
+        delete_user( $user =>
+            delete_home => TRUE,
+        );
     };
 
 =head2 prepare_monitor
