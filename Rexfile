@@ -1010,6 +1010,46 @@ task update_legacy_config =>
         };
     };
 
+=head2 service
+
+    rex service [--command=<command>] [--services=<service>,...] [--force=1]
+
+Restart services on the machine(s). C<--command> is the command to run
+and defaults to C<restart> (use C<status> to get service status).
+C<--services> is a comma-separated list of services to command (defaults
+to C<*>, all services).  Use C<--force=1> to force-kill any service that
+is not restarted/stopped.
+
+=cut
+
+task service =>
+    group => [qw( all )],
+    sub {
+        my ( $opt ) = @_;
+        my $command = $opt->{command} || 'restart';
+        my @services = split( /,/, $opt->{services} ) || '*';
+
+        my $services = join " ", map { '~cpantesters/service/' . $_ } @services;
+        my $line = sprintf( 'sudo -u cpantesters sv %s %s', $command, $services );
+        Rex::Logger::info( 'Running: ' . $line );
+        my @out = run $line;
+        Rex::Logger::info( $_ ) for @out;
+
+        if ( $command =~ /restart|stop/ && $opt->{force} ) {
+            for my $out ( grep { /^timeout:/ } @out ) {
+                my ( $status, $state, $path, $pid ) = $out =~ /^([^:]+):\s+([^:]+)\s+([^:]+):\s+\(pid (\d+)\)/;
+                my $service = basename $path;
+                if ( $state eq 'run' && $pid ) {
+                    Rex::Logger::info( 'Force killing ' . $pid );
+                    run "kill $pid";
+                }
+                else {
+                    Rex::Logger::info( sprintf 'Cannot force kill %s: Service is %s', $service, $state );
+                }
+            }
+        }
+    };
+
 #######################################################################
 
 =head1 Subroutines
