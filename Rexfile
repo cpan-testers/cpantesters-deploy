@@ -246,9 +246,10 @@ task prepare_api =>
             run 'systemctl disable runit';
 
             run 'a2enmod ' . $_ for qw( proxy proxy_http proxy_wstunnel rewrite );
+
+            _deploy_group_sites( "api" );
         };
 
-        _deploy_group_sites( "api" );
         run_task 'prepare_perl', on => connection->server;
         run_task 'prepare_user', on => connection->server;
     };
