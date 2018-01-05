@@ -129,7 +129,7 @@ set common_packages => [ qw/
     less
 / ];
 
-my @web_packages = qw/ apache2 runit perlbrew libmysqlclient-dev /;
+my @web_packages = qw/ apache2 runit perlbrew default-libmysqlclient-dev /;
 set api_packages => \@web_packages;
 set backend_packages => [qw/ runit perlbrew default-libmysqlclient-dev / ];
 set cpan_packages => [qw/ runit perlbrew apache2 / ];
