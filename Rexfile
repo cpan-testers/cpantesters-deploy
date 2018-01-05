@@ -1027,8 +1027,8 @@ task service =>
     sub {
         my ( $opt ) = @_;
         my $command = $opt->{command} || 'restart';
-        my @services = split( /,/, $opt->{services} ) || '*';
-
+        my @services = split( /,/, $opt->{services} );
+        @services = ( '*' ) if !@services;
         my $services = join " ", map { '~cpantesters/service/' . $_ } @services;
         my $line = sprintf( 'sudo -u cpantesters sv %s %s', $command, $services );
         Rex::Logger::info( 'Running: ' . $line );
