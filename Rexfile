@@ -126,7 +126,7 @@ set perlbrew_root => '/opt/local/perlbrew';
 
 set common_packages => [ qw/
     build-essential git perl-doc perl vim logrotate ack-grep ntp sudo rsync
-    less
+    less tmux strace screen
 / ];
 
 my @web_packages = qw/ apache2 runit perlbrew default-libmysqlclient-dev /;
