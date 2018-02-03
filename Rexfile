@@ -965,6 +965,11 @@ task update_legacy_config =>
     group => [qw( legacy )],
     sub {
         my %legacy_config = (
+            '/media/backend/cpantesters/page-requests' => {
+                config => [qw(
+                    data/settings.ini
+                )],
+            },
             '/media/backend/cpantesters/generate' => {
                 config => [qw(
                     data/parse.ini data/regenerate.ini
