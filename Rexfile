@@ -312,6 +312,10 @@ task prepare_cpan =>
                 shell => '/bin/bash',
                 create_home => TRUE;
 
+            Rex::Logger::info( 'Allowing sudo to `cpan` for everyone' );
+            append_if_no_such_line '/etc/sudoers',
+                'ALL ALL=(cpan) NOPASSWD: ALL';
+
             Rex::Logger::info( 'Setting up cpan user environment' );
             for my $file ( qw( .profile .bash_profile ) ) {
                 file '/home/cpan/' . $file,
