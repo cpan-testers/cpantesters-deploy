@@ -1,0 +1,43 @@
+version: '3'
+services:
+    db_tester:
+        image: mysql:5.7
+        environment:
+            MYSQL_ROOT_PASSWORD: rootpw
+            MYSQL_DATABASE: cpantesters
+        volumes:
+            - db_tester:/var/lib/mysql
+    db_web:
+        image: mysql:5.7
+        environment:
+            MYSQL_ROOT_PASSWORD: rootpw
+            MYSQL_DATABASE: cpantesters_web
+        volumes:
+            - db_web:/var/lib/mysql
+    api:
+        image: cpantesters:api
+        depends_on:
+            - db_tester
+        ports:
+            - '4000:4000'
+    web:
+        image: cpantesters:web
+        depends_on:
+            - db_tester
+            - db_web
+        environment:
+            OAUTH2_GITHUB_CLIENT: a765a2b1dd2302dc4abd
+            OAUTH2_GITHUB_SECRET: f368e10f53b0587a0e6753a187a537009113d522
+        ports:
+            - '3000:3000'
+    deploy:
+        image: cpantesters:web
+        command:
+            - './deploy-db.sh'
+        depends_on:
+            - db_tester
+            - db_web
+
+volumes:
+    db_tester:
+    db_web:
