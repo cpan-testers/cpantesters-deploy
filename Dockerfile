@@ -53,13 +53,14 @@ RUN cpanm --notest \
     Sereal \
     Test::More
 
-RUN apt-get update && apt-get install -y \
-    libdbd-mysql-perl \
-    libdbd-sqlite3-perl
+RUN echo "deb http://deb.debian.org/debian stretch-backports main" >> /etc/apt/sources.list.d/stretch-backports.list \
+    && apt-get update && apt-get install -y \
+        libdbd-mysql-perl \
+        libdbd-sqlite3-perl
 
 COPY ./wait-for-it.sh ./wait-for-it.sh
 RUN chmod +x ./wait-for-it.sh
 
-COPY etc/docker/deploy-db.sh ./
+COPY etc/docker/deploy-db.sh ./deploy-db.sh
 RUN chmod +x ./deploy-db.sh
 
