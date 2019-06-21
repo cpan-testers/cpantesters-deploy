@@ -15,13 +15,13 @@ services:
         volumes:
             - db_web:/var/lib/mysql
     api:
-        image: cpantesters:api
+        image: cpantesters/api
         depends_on:
             - db_tester
         ports:
             - '4000:4000'
     web:
-        image: cpantesters:web
+        image: cpantesters/web
         depends_on:
             - db_tester
             - db_web
@@ -31,7 +31,9 @@ services:
         ports:
             - '3000:3000'
     deploy:
-        image: cpantesters:web
+        build:
+            context: .
+            dockerfile: Dockerfile.deploy
         command:
             - './deploy-db.sh'
         depends_on:

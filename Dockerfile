@@ -61,6 +61,3 @@ RUN echo "deb http://deb.debian.org/debian stretch-backports main" >> /etc/apt/s
 COPY ./wait-for-it.sh ./wait-for-it.sh
 RUN chmod +x ./wait-for-it.sh
 
-COPY etc/docker/deploy-db.sh ./deploy-db.sh
-RUN chmod +x ./deploy-db.sh
-

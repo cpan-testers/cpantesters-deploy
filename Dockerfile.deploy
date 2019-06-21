@@ -1,0 +1,5 @@
+FROM cpantesters/schema
+COPY etc/docker/deploy-db.sh ./deploy-db.sh
+COPY etc/docker/mysql.conf ./.cpanstats.cnf
+RUN chmod +x deploy-db.sh
+CMD [ './deploy-db.sh' ]
