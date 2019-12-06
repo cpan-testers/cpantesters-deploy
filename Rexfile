@@ -106,9 +106,9 @@ my $JSON = JSON::PP->new->ascii->pretty->canonical;
 # Groups
 group all => qw(
     cpantesters3.dh.bytemark.co.uk cpantesters4.dh.bytemark.co.uk
-    cpantesters1.barnyard.co.uk monitor.preaction.me
+    monitor.preaction.me
 );
-group api => qw( cpantesters3.dh.bytemark.co.uk cpantesters1.barnyard.co.uk );
+group api => qw( cpantesters3.dh.bytemark.co.uk );
 group backend => 'cpantesters4.dh.bytemark.co.uk';
 group web => 'cpantesters3.dh.bytemark.co.uk';
 group monitor => 'monitor.preaction.me';
