@@ -51,7 +51,8 @@ RUN cpanm --notest \
     Metabase::User::Profile \
     Mojo::mysql \
     Sereal \
-    Test::More
+    Test::More \
+    YAML::XS
 
 RUN echo "deb http://deb.debian.org/debian stretch-backports main" >> /etc/apt/sources.list.d/stretch-backports.list \
     && apt-get update && apt-get install -y \
