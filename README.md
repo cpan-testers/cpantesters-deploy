@@ -1,50 +1,96 @@
 
 # CPANTesters Deploy
 
-This repository contains deploy scripts and configuration files for the
-CPANTesters servers.
+This repository contains a development environment, deploy scripts, and
+configuration files for the CPANTesters servers.
 
-## Getting Started
+## Getting Started (Development Environment)
 
-### Running the VM
+This repository can be used as a development environment, and is the
+recommended way to develop for CPAN Testers.
 
-To run the VM, you need Vagrant, VirtualBox, and some Vagrant plugins.
-Install Vagrant and VirtualBox according to your OS, and then to install
-the Vagrant plugins:
+### Prerequisites
 
-    $ vagrant plugin vbguest
+To use this environment, you must have:
 
-### Preparing the VM
+1. `make`
+2. `git`
+3. `docker`
+    * On MacOS and Windows, install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
-To prepare the VM by deploying basic packages and creating user
-accounts, you need [Rex](http://rexify.org) installed. Rex is available
-from CPAN: `cpan Rex`. The VM you create can take on multiple roles. To
-see what roles are available and how to deploy them, run `perldoc
-./Rexfile`.
+### Fetch Project Code
 
-In order to run the Rex task on your VM, make sure to pass the `-E vm`
-flag to `rex`.
+To fetch the project code, use `make src`. This will download the CPAN
+Testers repositories into the `src/` directory.
 
-### Deploying Applications
+### Build Docker Containers
 
-Each repository in the CPAN Testers application has its own `Rexfile` to
-deploy itself into the machine prepared by this repository. All of the
-repository Rexfiles also support the `-E vm` flag to deploy into the VM.
+To build the initial Docker containers, use `make docker`. This will
+build:
 
-These repositories are:
+1. `cpantesters/base` - The base CPAN Testers container
+2. `cpantesters/schema` - Container with the CPAN Testers schema
+3. `cpantesters/backend` - The backend, which runs Minion workers
+4. `cpantesters/api` - The API web application
+5. `cpantesters/web` - The new web application
 
-* [CPAN::Testers::Schema](http://github.com/cpan-testers/cpantesters-schema) - Deploy the database schema
-* [CPAN::Testers::Backend](http://github.com/cpan-testers/cpantesters-backend) - Deploy the backend processing tasks and
-  daemons
-* [CPAN::Testers::API](http://github.com/cpan-testers/cpantesters-api) - Deploy the API server and message broker
-* [CPAN::Testers::Web](http://github.com/cpan-testers/cpantesters-web) - Deploy the primary web application
+Each build will write a log to `build-*.log` to inspect for issues.
+
+Docker itself is smart about not rebuilding things it does not need to,
+so `make docker` will be as fast as it can be. However, if you want to
+only build a certain container, you can use the following `make`
+targets:
+
+* `make docker-base`
+* `make docker-schema`
+* `make docker-backend`
+* `make docker-api`
+* `make docker-web`
+
+### Run Test Cluster
+
+To run the test cluster, use `make start`. This uses the
+`docker-compose.yml` file to run a full CPAN Testers cluster including
+two database nodes, an API node, and a Web node. This also automatically
+runs a database upgrade (deploying the schema if it's missing).
+
+Once the cluster starts, you can test the web apps with these URLs:
+
+* <http://localhost:3000> - The main web app
+* <http://localhost:4000> - The API web app
+
+### Populate Test Data
+
+XXX
+
+### Hack!
+
+Here are some possible ways to test changes to parts of the code:
+
+#### Backend processing of incoming test reports
+
+Once a report is in the database, it must be processed. Any report in
+the database can be reprocessed any number of times.
+
+XXX
+
+#### Test reporting clients
+
+XXX - This requires another Docker node for the legacy metabase process
+
+#### Web applications
+
+This one's pretty easy: Just make your change in the `src/` project
+directory and rebuild. Your changed files will be added to the Docker
+containers and ready to run! Note: Only files added to the Git repo will
+be installed into the Docker containers.
 
 ## Architecture Overview
 
 This is a quick overview of the CPANTesters architecture as managed by
 this repository.
 
-### Database and Metabase
+### Database and Metabase (`cpantesters-schema`)
 
 The primary source of CPANTesters data is the Metabase. This is the
 database that the CPANTesters reporters write to. This database is
@@ -54,14 +100,14 @@ The CPANTesters project reads from the Metabase and writes raw data and
 report summaries to a local MySQL database. This local MySQL database is
 managed here.
 
-### Backend ETL
+### Backend ETL (`cpantesters-backend`)
 
 The backend processes read from the Metabase and writes to the local
 database. These processes also send out the regular report e-mails,
 summarize the raw reports in to easily-queried tables, and maintain the
 data the web app requires.
 
-### Web app
+### Web app (`cpantesters-api`, `cpantesters-web`)
 
 The CPANTesters web app is the final piece and uses the MySQL database
 and the data the Backend ETL provides to make a frontend that users can
@@ -75,10 +121,25 @@ CPANTesters is managed with [Rex](http://rexify.org). The `Rexfile`
 contains the main routines for the CPANTesters deploy processes. To
 see the documentation for deploying, do `perldoc ./Rexfile`.
 
-### `backend/`
+### Dockerfile
 
-This directory contains the scripts that maintain the CPANTesters data,
-reading incoming test reports and summarizing into the database tables.
+CPAN Testers is currently being migrated to Docker containers to make it
+easier to develop and deploy. During the transition, Docker is used for
+development, but production deployment is done using Rex.
+
+The Dockerfile in this repository builds a base image with prereqs that
+all the apps need. The Dockerfiles in the `src` repositories are
+responsible for their own prereqs.
+
+### docker-compose.yml
+
+The docker compose configuration for a development cluster. See "Getting
+Started", above.
+
+### `src/`
+
+The location for the CPAN Testers source repositories. Use `make src` to
+populate these.
 
 ### `etc/`
 
@@ -87,6 +148,7 @@ deployed to the servers.
 
 ### `dist/`
 
-The application distributions. These are synced from the source by a Rex
-task, and are not included in this repository.
+CPAN distributions to include in the CPAN Testers base image. This
+allows pre-release versions of CPAN modules to be tested in the
+development environment.
 
