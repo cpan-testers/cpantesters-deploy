@@ -62,3 +62,13 @@ RUN echo "deb http://deb.debian.org/debian stretch-backports main" >> /etc/apt/s
 COPY ./wait-for-it.sh ./wait-for-it.sh
 RUN chmod +x ./wait-for-it.sh
 
+# Add all distributions in the "dist" directory before any other
+# distributions. This way we can have pre-release modules in our dev
+# environment. Do this last to take advantage of as much caching as
+# possible above, even though any changes here mean rebuilding every
+# downstream image...
+COPY ./dist ./dist
+RUN bash -vlc 'for DIST in ./dist/*; do \
+        echo "Building pre-release: $DIST"; \
+        cpanm -v --notest $DIST; \
+    done && rm -rf ./dist'
