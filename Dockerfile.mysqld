@@ -1,0 +1,2 @@
+FROM mysql:5.7
+COPY etc/docker/mysql.conf /root/.my.cnf

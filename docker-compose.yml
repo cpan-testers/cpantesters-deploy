@@ -1,14 +1,18 @@
 version: '3'
 services:
     db_tester:
-        image: mysql:5.7
+        build:
+            context: .
+            dockerfile: Dockerfile.mysqld
         environment:
-            MYSQL_ROOT_PASSWORD: rootpw
             MYSQL_DATABASE: cpantesters
+            MYSQL_ROOT_PASSWORD: rootpw
         volumes:
             - db_tester:/var/lib/mysql
     db_web:
-        image: mysql:5.7
+        build:
+            context: .
+            dockerfile: Dockerfile.mysqld
         environment:
             MYSQL_ROOT_PASSWORD: rootpw
             MYSQL_DATABASE: cpantesters_web
