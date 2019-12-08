@@ -25,7 +25,7 @@ Testers repositories into the `src/` directory.
 
 ### Build Docker Containers
 
-To build the initial Docker containers, use `make docker`. This will
+To build the initial Docker containers, use `make compose`. This will
 build:
 
 1. `cpantesters/base` - The base CPAN Testers container
@@ -33,11 +33,12 @@ build:
 3. `cpantesters/backend` - The backend, which runs Minion workers
 4. `cpantesters/api` - The API web application
 5. `cpantesters/web` - The new web application
+6. The docker-compose utility container instances
 
 Each build will write a log to `build-*.log` to inspect for issues.
 
 Docker itself is smart about not rebuilding things it does not need to,
-so `make docker` will be as fast as it can be. However, if you want to
+so `make compose` will be as fast as it can be. However, if you want to
 only build a certain container, you can use the following `make`
 targets:
 
@@ -58,30 +59,79 @@ Once the cluster starts, you can test the web apps with these URLs:
 
 * <http://localhost:3000> - The main web app
 * <http://localhost:4000> - The API web app
+* <http://localhost:5000> - The legacy metabase web app
+
+To view the logs from the docker containers, use `docker-compose logs`.
+The `-f` flag will follow the logs like `tail -f`.
 
 ### Populate Test Data
 
-XXX
+To add some data to your development instance, run `make data` and
+specify a distribution (with an optional version), like so:
 
-### Hack!
+    make data DIST=Mojolicious@8.27
 
-Here are some possible ways to test changes to parts of the code:
+This will download all the data from the primary CPAN Testers database
+and load it into your dev site.
+
+### Make Changes
+
+Make changes to the code in the `src/` directory. When you're done, use
+`make compose` to rebuild the images and `make restart` to restart the
+containers.
+
+#### Connect to the Tester database
+
+To connect to the running tester database, use `make connect`.
 
 #### Backend processing of incoming test reports
 
 Once a report is in the database, it must be processed. Any report in
 the database can be reprocessed any number of times.
 
-XXX
+To re-process an existing test report, run the `beam run report process`
+command inside the `backend` container:
+
+    docker-compose exec backend -- beam run report process dc9c7be4-1985-11ea-9825-b8cf277f9bb7
+
+To send a request to re-process the report to the Minion job queue, use
+`beam run report queue`:
+
+    docker-compose exec backend -- beam run report queue dc9c7be4-1985-11ea-9825-b8cf277f9bb7
+
+To see all the available backend commands:
+
+    docker-compose exec backend -- beam list
 
 #### Test reporting clients
 
-XXX - This requires another Docker node for the legacy metabase process
+To submit reports to your dev instance, install and configure
+[CPAN::Reporter](http://metacpan.org/pod/CPAN::Reporter).
+
+    # Enter the cpan shell using the `cpan` command
+    cpan> install Task::CPAN::Reporter
+    cpan> reload cpan
+    cpan> o conf init test_report
+
+When asked about the `transport?` value, use the value below
+
+    Metabase uri http://localhost:5000/api/v1/ id_file metabase_id.json
+
+This config file is also used by CPANPLUS and App-cpanminus-reporter.
+
+*NOTE:* CPAN::Reporter tries to stop you from sending duplicate reports
+by keeping track of the reports you've sent. If you get this message,
+you should clear the cache in `~/.cpanreporter/reports-sent.db`.
+
+    CPAN::Reporter: this appears to be a duplicate report for the test phase:
+    PASS Mojolicious-8.27 darwin-2level 18.0.0
+
+    Test report will not be sent.
 
 #### Web applications
 
-This one's pretty easy: Just make your change in the `src/` project
-directory and rebuild. Your changed files will be added to the Docker
+Make your change in the `src/` project directory, rebuild and restart
+(`make compose restart`). Your changed files will be added to the Docker
 containers and ready to run! Note: Only files added to the Git repo will
 be installed into the Docker containers.
 
