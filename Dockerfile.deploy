@@ -1,5 +1,8 @@
 FROM cpantesters/schema
+RUN apt-get update && apt-get install -y default-mysql-client
 COPY etc/docker/deploy-db.sh ./deploy-db.sh
 COPY etc/docker/mysql.conf ./.cpanstats.cnf
+COPY var/schema/metabase-schema.sql ./metabase-schema.sql
+COPY var/schema/legacy-schema.sql ./legacy-schema.sql
 RUN chmod +x deploy-db.sh
 CMD [ './deploy-db.sh' ]

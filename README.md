@@ -92,16 +92,16 @@ the database can be reprocessed any number of times.
 To re-process an existing test report, run the `beam run report process`
 command inside the `backend` container:
 
-    docker-compose exec backend -- beam run report process dc9c7be4-1985-11ea-9825-b8cf277f9bb7
+    docker-compose exec backend beam run report process dc9c7be4-1985-11ea-9825-b8cf277f9bb7
 
 To send a request to re-process the report to the Minion job queue, use
 `beam run report queue`:
 
-    docker-compose exec backend -- beam run report queue dc9c7be4-1985-11ea-9825-b8cf277f9bb7
+    docker-compose exec backend beam minion run report queue dc9c7be4-1985-11ea-9825-b8cf277f9bb7
 
 To see all the available backend commands:
 
-    docker-compose exec backend -- beam list
+    docker-compose exec backend beam list
 
 #### Test reporting clients
 
@@ -142,26 +142,28 @@ this repository.
 
 ### Database and Metabase (`cpantesters-schema`)
 
-The primary source of CPANTesters data is the Metabase. This is the
-database that the CPANTesters reporters write to. This database is
-managed elsewhere.
+The primary source of CPANTesters data is the schema. This is the
+database that the CPANTesters reporters write to.
 
-The CPANTesters project reads from the Metabase and writes raw data and
-report summaries to a local MySQL database. This local MySQL database is
-managed here.
+A mock version of the previous main database, Metabase, is still written
+to for legacy processes. These need to be updated to use the main
+database and then the Metabase can be decomissioned.
 
 ### Backend ETL (`cpantesters-backend`)
 
-The backend processes read from the Metabase and writes to the local
-database. These processes also send out the regular report e-mails,
-summarize the raw reports in to easily-queried tables, and maintain the
-data the web app requires.
+The backend processes turn the full test reports into summaries,
+statistics, and metrics.  These processes also send out the regular
+report e-mails, summarize the raw reports in to easily-queried tables,
+and maintain the data the web app requires.
 
 ### Web app (`cpantesters-api`, `cpantesters-web`)
 
 The CPANTesters web app is the final piece and uses the MySQL database
 and the data the Backend ETL provides to make a frontend that users can
 use. There are also APIs available from the web frontend.
+
+The web app has its own database to manage user accounts and
+preferences.
 
 ## Repository Overview
 
