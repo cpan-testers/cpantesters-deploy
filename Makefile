@@ -72,3 +72,6 @@ data:
 	@echo "Fetching data for $(DIST)"
 	@docker-compose run deploy cpantesters-schema fetch --dist $(DIST) report release
 
+daemon:
+	@COMPOSE_FILE="docker-compose.yml:docker-compose.devel.yml" \
+	    docker-compose build && docker-compose up
