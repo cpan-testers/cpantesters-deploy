@@ -1047,7 +1047,7 @@ task service =>
 
         if ( $command =~ /restart|stop/ && $opt->{force} ) {
             for my $out ( grep { /^timeout:/ } @out ) {
-                my ( $status, $state, $path, $pid ) = $out =~ /^([^:]+):\s+([^:]+)\s+([^:]+):\s+\(pid (\d+)\)/;
+                my ( $status, $state, $path, $pid ) = $out =~ /^([^:]+):\s+([^:]+):\s+([^:]+):\s+\(pid (\d+)\)/;
                 my $service = basename $path;
                 if ( $state eq 'run' && $pid ) {
                     Rex::Logger::info( 'Force killing ' . $pid );

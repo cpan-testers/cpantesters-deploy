@@ -1,0 +1,22 @@
+version: '3'
+services:
+    balancer:
+        image: nginx:stable-alpine
+        ports:
+            - '80:8000'
+        volumes:
+            - "./etc/nginx/stage:/etc/nginx/conf.d"
+            - "certbot:/etc/letsencrypt"
+    certbot:
+        image: certbot/certbot
+        depends_on:
+            - balancer
+        command: |-
+            certonly --standalone --http-01-port 8000
+            --cert-name stage.cpantesters.org
+            -d stage.cpantesters.org,api-stage.cpantesters.org,cpan-stage.cpantesters.org,metabase-stage.cpantesters.org,tester-stage.cpantesters.org,www-stage.cpantesters.org
+        volumes:
+            - "certbot:/etc/letsencrypt"
+
+volumes:
+    certbot:

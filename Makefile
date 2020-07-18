@@ -2,6 +2,7 @@
 GH = https://github.com/orgs/cpan-testers
 SRC_DIR = src
 REPOS = cpantesters-schema cpantesters-backend cpantesters-web cpantesters-api
+ENV = devel
 
 .PHONY: src docker docker-base docker-schema docker-backend docker-web docker-api \
     start stop compose connect data restart
@@ -73,5 +74,16 @@ data:
 	@docker-compose run deploy cpantesters-schema fetch --dist $(DIST) report release
 
 daemon:
-	@COMPOSE_FILE="docker-compose.yml:docker-compose.devel.yml" \
-	    docker-compose build && docker-compose up
+	@COMPOSE_FILE=docker-compose.yml:docker-compose.daemon.yml \
+	    docker-compose build
+	@COMPOSE_FILE=docker-compose.yml:docker-compose.daemon.yml \
+	    docker-compose up
+
+build-cert:
+	@COMPOSE_FILE=docker-compose.yml:docker-compose.$(ENV).yml \
+	    docker-compose run certbot
+
+list-cert:
+	@COMPOSE_FILE=docker-compose.yml:docker-compose.$(ENV).yml \
+	    docker-compose run certbot certificates
+
