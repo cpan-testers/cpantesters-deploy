@@ -108,7 +108,7 @@ group all => qw(
     cpantesters3.dh.bytemark.co.uk cpantesters4.dh.bytemark.co.uk
     monitor.preaction.me
 );
-group api => qw( cpantesters3.dh.bytemark.co.uk );
+group api => qw( cpantesters3.dh.bytemark.co.uk cpantesters4.dh.bytemark.co.uk );
 group backend => 'cpantesters4.dh.bytemark.co.uk';
 group web => 'cpantesters3.dh.bytemark.co.uk';
 group monitor => 'monitor.preaction.me';
@@ -116,7 +116,9 @@ group legacy => 'cpantesters3.dh.bytemark.co.uk';
 group cpan => 'cpantesters4.dh.bytemark.co.uk';
 
 # The prod database is _not_ accessible via SSH from the outside world
-group database => '216.246.80.46';
+#group database => '216.246.80.45';
+#group database => '216.246.80.46';
+group database => 'db-primary-1.cpantesters.org';
 
 #######################################################################
 # Settings
@@ -145,13 +147,14 @@ set monitor_user => 'admin';
 set monitor_password => 'YKn-sfS-a3U-KFs';
 set monitor_mysql_user => 'monitor';
 set monitor_mysql_password => 'fQZsTa6nvS83zjX';
-set monitor_mysql_hosts => [qw( 216.246.80.45 216.246.80.46 )];
+set monitor_mysql_hosts => [qw( db-primary-1.cpantesters.org db-replica-1.cpantesters.org )];
 
 my %sites = (
     api => [qw( api.cpantesters.org metabase.cpantesters.org )],
-    www => [qw( beta.cpantesters.org )], # www.cpantesters.org
+    www => [qw( beta.cpantesters.org cpantesters.org )],
     monitor => [qw( status.cpantesters.org )],
     cpan => [qw( cpan.cpantesters.org backpan.cpantesters.org )],
+    downtime => [qw( 000-maintenance )],
 );
 
 my @grafana_dashboards = (qw(
@@ -1060,6 +1063,45 @@ task service =>
         }
     };
 
+desc 'Start maintenance mode';
+task 'start_maintenance' =>
+    group => [qw( api web )],
+    sub {
+        ensure_sudo_password();
+        sudo sub {
+            Rex::Logger::info( 'Syncing maintenance site' );
+            run 'mkdir -p /var/www/maintenance';
+            sync_up 'var/www/maintenance', '/var/www/maintenance';
+            Rex::Logger::info( 'Disabling app sites' );
+            _disable_group_sites(qw( api www ));
+            Rex::Logger::info( 'Enabling maintenance site' );
+            _deploy_group_sites( 'downtime' );
+            Rex::Logger::info( 'Purging Fastly cache' );
+            run 'curl -X PURGE https://cpantesters.org';
+            run 'curl -X PURGE http://cpantesters.org';
+            run 'curl -X PURGE https://www.cpantesters.org';
+            run 'curl -X PURGE http://www.cpantesters.org';
+        }
+    };
+
+desc 'Stop maintenance mode';
+task 'stop_maintenance' =>
+    group => [qw( api web )],
+    sub {
+        ensure_sudo_password();
+        sudo sub {
+            Rex::Logger::info( 'Enabling app sites' );
+            _enable_group_sites(qw( api www ));
+            Rex::Logger::info( 'Disabling maintenance site' );
+            _disable_group_sites( 'downtime' );
+            Rex::Logger::info( 'Purging Fastly cache' );
+            run 'curl -X PURGE https://cpantesters.org';
+            run 'curl -X PURGE http://cpantesters.org';
+            run 'curl -X PURGE https://www.cpantesters.org';
+            run 'curl -X PURGE http://www.cpantesters.org';
+        }
+    };
+
 #######################################################################
 
 =head1 Subroutines
@@ -1089,15 +1131,33 @@ in the C<%sites> hash, above.
 =cut
 
 sub _deploy_group_sites {
-    my ( $group ) = @_;
-    for my $site ( @{ $sites{ $group } } ) {
+    my @groups = @_;
+    for my $site ( map { @{ $sites{ $_ } } } @groups ) {
         Rex::Logger::info( "Installing Apache2 config for " . $site );
         file "/etc/apache2/sites-available/$site.conf",
             source => "etc/apache2/vhost/$site.conf";
+    }
+    _enable_group_sites( @groups );
+}
+
+sub _enable_group_sites {
+    my @groups = @_;
+    for my $site ( map { @{ $sites{ $_ } } } @groups ) {
+        Rex::Logger::info( 'Enabling Apache2 site ' . $site );
         run 'a2ensite ' . $site;
     }
     Rex::Logger::info( "Disabling Debian default site" );
     run 'a2dissite 000-default';
+    Rex::Logger::info( "Restarting Apache..." );
+    service apache2 => 'restart';
+}
+
+sub _disable_group_sites {
+    my @groups = @_;
+    for my $site ( map { @{ $sites{ $_ } } } @groups ) {
+        Rex::Logger::info( 'Disabling Apache2 site ' . $site );
+        run 'a2dissite ' . $site;
+    }
     Rex::Logger::info( "Restarting Apache..." );
     service apache2 => 'restart';
 }
