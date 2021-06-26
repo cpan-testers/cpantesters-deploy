@@ -250,6 +250,7 @@ task prepare_api =>
 
             run 'a2enmod ' . $_ for qw( proxy proxy_http proxy_wstunnel rewrite );
 
+            _deploy_include_files();
             _deploy_group_sites( "api" );
         };
 
@@ -436,6 +437,7 @@ task prepare_cpan =>
                 ;
 
             Rex::Logger::info( 'Configuring Apache2' );
+            _deploy_include_files();
             _deploy_group_sites( 'cpan' );
 
             Rex::Logger::info( 'Configuring logrotate' );
@@ -448,6 +450,15 @@ task prepare_cpan =>
         };
 
     };
+
+task deploy_cpan => group => [qw( cpan )], sub {
+    ensure_sudo_password();
+    sudo sub {
+        Rex::Logger::info( 'Configuring Apache2' );
+        _deploy_include_files();
+        _deploy_group_sites( 'cpan' );
+    };
+};
 
 =head2 prepare_perl
 
@@ -768,6 +779,7 @@ task prepare_monitor =>
             run 'a2enmod ' . $_ for qw( proxy proxy_http proxy_wstunnel rewrite );
 
             Rex::Logger::info( 'Configuring Apache' );
+            _deploy_include_files();
             _deploy_group_sites( 'monitor' );
 
             Rex::Logger::info( 'Syncing Apache site' );
@@ -1075,6 +1087,7 @@ task 'start_maintenance' =>
             Rex::Logger::info( 'Disabling app sites' );
             _disable_group_sites(qw( api www ));
             Rex::Logger::info( 'Enabling maintenance site' );
+            _deploy_include_files();
             _deploy_group_sites( 'downtime' );
             Rex::Logger::info( 'Purging Fastly cache' );
             run 'curl -X PURGE https://cpantesters.org';
@@ -1138,6 +1151,17 @@ sub _deploy_group_sites {
             source => "etc/apache2/vhost/$site.conf";
     }
     _enable_group_sites( @groups );
+}
+
+sub _deploy_include_files {
+    Rex::Logger::info( "Deploying Apache2 include files..." );
+    file '/etc/apache2/include',
+        ensure => 'directory',
+        mode => 755,
+        owner => 'root',
+        group => 'root',
+        ;
+    sync_up 'etc/apache2/include', '/etc/apache2/include';
 }
 
 sub _enable_group_sites {
