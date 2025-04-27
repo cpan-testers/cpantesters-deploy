@@ -100,6 +100,7 @@ use File::Basename qw( basename );
 use List::Util qw( uniq );
 use HTTP::Tiny;
 use JSON::PP;
+use YAML::XS qw( Load );
 my $JSON = JSON::PP->new->ascii->pretty->canonical;
 
 #######################################################################
@@ -611,9 +612,46 @@ task prepare_user =>
         };
     };
 
+=head2 sync_users
+
+Sync all the user accounts from ./etc/users.yml. This is a stopgap until
+I learn how to use Rex's CMDB to do this better.
+
+=cut
+
+task sync_users => 
+  group => [qw( all )],
+  sub {
+    my $users = {};
+    LOCAL {
+      my $yaml = cat './etc/users.yml';
+      say $yaml;
+      $users = Load( $yaml );
+    };
+    ensure_sudo_password();
+    sudo sub {
+      for my $username ( keys %{$users} ) {
+        my $user = $users->{ $username };
+        create_user(
+          $username => {
+            password => '123qwe',
+            shell => '/bin/bash',
+            create_home => TRUE,
+            home => '/home/' . $username,
+            %$user,
+          }
+        );
+        if ( $user->{root} ) {
+            append_if_no_such_line '/etc/sudoers',
+                "$username ALL=(ALL:ALL) ALL";
+        }
+      }
+    }
+  };
+
 =head2 add_user
 
-    rex add_user --user=<user> [--root=1]
+    rex add_user --user=<user> [--root=1] [--key=ssh-key]
 
 Add a user account to the given box. The user will be given sudo access to the
 C<cpantesters> user. If the C<--root> option is given, the user will be given
@@ -625,7 +663,7 @@ task add_user =>
     group => [qw( all )],
     sub {
         my ( $opt ) = @_;
-        my ( $user, $root ) = @{$opt}{qw( user root )};
+        my ( $user, $root, $key ) = @{$opt}{qw( user root key )};
         if ( !$user ) {
             die "User is required";
         }
@@ -636,6 +674,7 @@ task add_user =>
                 password => '123qwe',
                 shell => '/bin/bash',
                 create_home => TRUE,
+                ssh_key => $key,
             );
             if ( $root ) {
                 append_if_no_such_line '/etc/sudoers',
