@@ -1,10 +1,30 @@
 christian:
+    groups:
+        - www-data
+        - sudo
     ssh_key:
         ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAkkUw2DyZfgRfGi4tAfbdxeSNWm6jYVRi4MjK1MeqJB93rfyraBxIWaP1H5zhzBvMh8mYhY+bax2n+DBxI4yuJzDIrYExPApX+Lh2r839xz4yTYDmw9aYYFmEUqoZNmUMtG/GnKrsY02hw2Inh5nbPziN6U5a9WIBc5DEd+5GK//JKp7uFWG32T9q7ByOHetBJn02tMjLCGmgnGtVoPQIRQKlUr2QSIXBjkA4UymmM4UX7ERSt3HrmRrWLoZNUKuGrrIY1OkI6XXGlO4jVZPj6yyR3BLq8jJT0gHhOXb3lpaw8kcqUdlQA4b9SkiZUazG+JXrFpJRPUvTEl6h/fbuCw== rsa-key-20170216 2048 Christian Walde
 
-scott:
+ferki:
+    groups:
+        - www-data
+        - sudo
     ssh_key:
+        ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCr70vp7GvDm239gSpiio0W2q5Www/dzE3YRWQJ3i0miGwuWfnysHd17PxcMsqLpo2+lwZLV2V3J27hrUSg9LbdoxAVfYWWGnXg2B/51rCphVXqykt3nlm0ZHO+q99ttCvicYeoeSGSKkrYWlwxyqGS6btd2ObN6xtohxOlw/FqP4/gID66OwJIU2VProkeYAXyQxK/i0VYbptK8BqXPsP8t4rAkN4GF7pDz9gBa8VYZ4WkbS7ACHW2Ewm5ubvhzO4GiVgeUD9k4iguaTt+cYXjShSI6IwPGF5SYqrBLnNh8cZnisklQF8VVUMqjEUlS3l3wvX+FXBNryOUMw30zwYaC0LutpJFSg3iPyo0uVhV2std43NBQ02Ml3lqTMS4GY7fkISmO5darQ31ZWDfFN8hVXLbgIlu3/jHXfte5o7VzD3u3br8QsMcumtPuL5qJimXneFdOwe5BJrfq0u7AzMp3pMKJ0GHW1266hJdF+CoBk0nrD52DbboNEWDVV2yI6z+Z9zJGtOw1oNat1VWv06hLYKYrwd/nHLFCHCtUW8cf7jxanHYI+kA4lNhYL831wVHkxvG55jVzLYbXDr3FHbwoLcqP5h6+aYtdTnVRd0kjOogdIkv4VIz3k66FTi1LP1lNkH4no6k5bMz7fUGx7BW3xQzbiKYEHuygkeON5Tq4w==
+        ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJcRVOEU5FaGYbKk5PzRCwsW07yxwKmA23aC5/MFf1wP
 
 ruth:
+    groups:
+        - www-data
+        - sudo
     ssh_key:
         ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC1i+Pg75okO7GgyxqO3VodIoIFmh0Gm10uAZiTXnxjouPXunDWRoWsDFN0o5O5mVj31bHNr2AwwI9+cjwfN8vRdKonl5fDZpST7urAaNIUuEY7f/gb0pprOLtWzJLMmuFTdMnNwCfcxWjgUkRzNi22nU4lbfdQI8deR9mGsXbVw2jI6lmfQtXDCrf7BwtIC/jykkdONab9zJFDHdbS63hDMknL5v8U2Ts4fpcb8mjz+anXIJ83KoCKKvCXk5u/cUr4Uq1DAF2MiMuC3QGsH085Cb9u2zuxH0RU52vrYgk7BytLp0YCCv8MAVbiGEXh4G6VpmywwLLXDVKQEGwQMCUBaQTwFNgV1uzq3jGtQI879B/uni5V9Lp/zkXCo2ib0Ls25XxTzsIH103fs6BvFsjjve6sWPNS+3+JfmFBDbG4VsjvM1ri+LYHWcRgc4MkgoCzPJfMZPtBhynaxrfPIWK8jGLk6eoZAiOmZh7zZgqF+Ak3ScPq3ZD9mO1gB/kX2A8=
+
+scott:
+    groups:
+        - www-data
+        - sudo
+    ssh_key:
+        ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCejQ4s1gsBggVb5LQnm2Yy+Bxwq6Guc+EUk0ZwLLcLiPTL5IjPP5SfIGW+BiZEFn94DcT6iM9tkcd40DFZns8HzGei+1JxyvrdoFknxF6Rvk5HBxKG8VaUUbCorqog22hHUzKKznooKouGNeO6C5+CvtdHIz8U141oVGkTaYCNSIUz3DC+ekBtmz3b5lerhXbRh9Bep5sbvI0IEbegBUYnGUS9M0bNsxiQPebS/ZygP1K1jg24SI25+3Utr5j+SN2rlXB5+G8JQk3p9Lg+Q/v5tW3IY3b0hIwRJ3A+mDLe96NnwMy318HLxrJmBJWeI2qDZ5aDOcsK7acjlRXujRdF9aOy6gkL8PIT0aeqLqqJUslHfVXw0mOSkHFAG3lnDwTITWpF2EmJlEg5JP/n56P34KZT9ZyrNP8H7NiOvBu0NnkJwkZAXELIZr/OPd3KXbbuXqMoa7UPH+6jDigcmMK2v1MdBMF71OWTXQkaUL31IPE+A/oatB8QG9YgCvWU9vk= bakers@basement.web-ster.com
+        ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOwvHmHSRjm3i6d1O5Se9RuiV9Te3OCihJuScS1IV1zX bakers@basement.web-ster.com
+

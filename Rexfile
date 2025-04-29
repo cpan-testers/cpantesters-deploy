@@ -213,9 +213,15 @@ task prepare =>
             Rex::Logger::info( "Checking common packages" );
             install package => $_ for @{ get 'common_packages' };
 
+            Rex::Logger::info( "Adding sudo group to sudoers" );
+            append_if_no_such_line '/etc/sudoers',
+                '%sudo ALL=(ALL:ALL) ALL';
+
             Rex::Logger::info( "Adding `cpantesters` to sudo" );
             append_if_no_such_line '/etc/sudoers',
                 'ALL ALL=(cpantesters) NOPASSWD: ALL';
+            append_if_no_such_line '/etc/sudoers',
+                '%www-data ALL=(cpantesters) NOPASSWD: ALL';
         };
     };
 
@@ -320,6 +326,8 @@ task prepare_cpan =>
             Rex::Logger::info( 'Allowing sudo to `cpan` for everyone' );
             append_if_no_such_line '/etc/sudoers',
                 'ALL ALL=(cpan) NOPASSWD: ALL';
+            append_if_no_such_line '/etc/sudoers',
+                '%www-data ALL=(cpan) NOPASSWD: ALL';
 
             Rex::Logger::info( 'Setting up cpan user environment' );
             for my $file ( qw( .profile .bash_profile ) ) {
@@ -625,63 +633,22 @@ task sync_users =>
     my $users = {};
     LOCAL {
       my $yaml = cat './etc/users.yml';
-      say $yaml;
       $users = Load( $yaml );
     };
     ensure_sudo_password();
     sudo sub {
       for my $username ( keys %{$users} ) {
         my $user = $users->{ $username };
-        create_user(
-          $username => {
-            password => '123qwe',
-            shell => '/bin/bash',
-            create_home => TRUE,
-            home => '/home/' . $username,
-            %$user,
-          }
+        account( $username =>
+          password => '123qwe',
+          shell => '/bin/bash',
+          create_home => TRUE,
+          home => '/home/' . $username,
+          %$user,
         );
-        if ( $user->{root} ) {
-            append_if_no_such_line '/etc/sudoers',
-                "$username ALL=(ALL:ALL) ALL";
-        }
       }
     }
   };
-
-=head2 add_user
-
-    rex add_user --user=<user> [--root=1] [--key=ssh-key]
-
-Add a user account to the given box. The user will be given sudo access to the
-C<cpantesters> user. If the C<--root> option is given, the user will be given
-full sudo privileges.
-
-=cut
-
-task add_user =>
-    group => [qw( all )],
-    sub {
-        my ( $opt ) = @_;
-        my ( $user, $root, $key ) = @{$opt}{qw( user root key )};
-        if ( !$user ) {
-            die "User is required";
-        }
-        ensure_sudo_password();
-        sudo sub {
-            create_user(
-                $user,
-                password => '123qwe',
-                shell => '/bin/bash',
-                create_home => TRUE,
-                ssh_key => $key,
-            );
-            if ( $root ) {
-                append_if_no_such_line '/etc/sudoers',
-                    "$user ALL=(ALL:ALL) ALL";
-            }
-        };
-    };
 
 =head2 remove_user
 
