@@ -640,11 +640,11 @@ task sync_users =>
       for my $username ( keys %{$users} ) {
         my $user = $users->{ $username };
         account( $username =>
-          password => '123qwe',
           shell => '/bin/bash',
           create_home => TRUE,
           home => '/home/' . $username,
           %$user,
+          groups => [ $username, @{ $user->{groups} // [] } ],
         );
       }
     }
