@@ -2,7 +2,15 @@
 GH = https://github.com/orgs/cpan-testers
 SRC_DIR = src
 REPOS = cpantesters-schema cpantesters-backend cpantesters-web cpantesters-api
-ENV = devel
+ENV = dev
+DOCKER_CONTEXT = cpantesters-${ENV}
+STACK_NAME = cpantesters
+COMPOSE_FILE = swarm-compose.yml
+
+API_PORT = 8000
+METABASE_PORT = 8250
+
+export API_PORT METABASE_PORT
 
 .PHONY: src docker docker-base docker-schema docker-backend docker-web docker-api \
     start stop compose connect data restart
@@ -14,7 +22,7 @@ src:
 
 docker-base:
 	@echo "Building base image as cpantesters/base..."
-	@docker build . --tag cpantesters/base >build-base.log \
+	@docker build . --platform linux/amd64 --tag cpantesters/base >build-base.log \
 	    || echo "ERR: Build failed. See build-base.log";
 
 docker-schema: docker-base
@@ -22,7 +30,7 @@ docker-schema: docker-base
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
 	echo "Building repo $$REPO as $$TAG..."; \
-	docker build $(SRC_DIR)/$$REPO --tag $$TAG >build-$$BUILD.log \
+	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
 docker-backend: docker-base docker-schema
@@ -30,7 +38,7 @@ docker-backend: docker-base docker-schema
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
 	echo "Building repo $$REPO as $$TAG..."; \
-	docker build $(SRC_DIR)/$$REPO --tag $$TAG >build-$$BUILD.log \
+	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
 docker-web: docker-base docker-schema
@@ -38,7 +46,7 @@ docker-web: docker-base docker-schema
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
 	echo "Building repo $$REPO as $$TAG..."; \
-	docker build $(SRC_DIR)/$$REPO --tag $$TAG >build-$$BUILD.log \
+	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
 docker-api: docker-base docker-schema
@@ -46,10 +54,32 @@ docker-api: docker-base docker-schema
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
 	echo "Building repo $$REPO as $$TAG..."; \
-	docker build $(SRC_DIR)/$$REPO --tag $$TAG >build-$$BUILD.log \
+	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
+	    || echo "ERR: Build failed. See build-$$BUILD.log";
+
+docker-cpan:
+	@BUILD="cpan"; \
+	TAG="cpantesters/$$BUILD"; \
+	echo "Building $$TAG..."; \
+	docker build . -f Dockerfile.cpan --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
 docker: docker-backend docker-web docker-api
+
+publish:
+	@echo 'Publishing cpantesters to Docker Hub'
+	@for IMAGE in cpantesters/{base,schema,backend,api,web,cpan}; do docker push $$IMAGE; done
+
+deploy:
+	# XXX: The only way to update config and secrets is to remove the entire stack and re-deploy it...
+	# So, for zero-downtime deployments, we will likely need to make a ${STACK_NAME}-blue and ${STACK_NAME}-green
+	# and then choosing which one is inactive to remove and replace with the new deployment.
+	@echo "Deploying to Swarm (context ${DOCKER_CONTEXT})"
+	@RESTORE_CONTEXT=${docker context show}; \
+		docker context use ${DOCKER_CONTEXT}; \
+		docker stack remove ${STACK_NAME}; \
+		sleep 10; \
+		docker stack deploy ${STACK_NAME} --compose-file ${COMPOSE_FILE};
 
 compose: docker
 	@echo 'Refreshing docker-compose services'

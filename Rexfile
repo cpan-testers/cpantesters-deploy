@@ -95,26 +95,35 @@ L<Rex|http://rexify.org>
 
 use Rex -feature => [ 1.4 ];
 use Rex::Commands::Sync;
+use Rex::Hardware;
+use Rex::CMDB;
 use Term::ReadKey;
 use File::Basename qw( basename );
 use List::Util qw( uniq );
 use HTTP::Tiny;
 use JSON::PP;
-use YAML::XS qw( Load );
+use YAML::XS qw( Load Dump );
 my $JSON = JSON::PP->new->ascii->pretty->canonical;
 
 #######################################################################
 # Groups
-group all => qw(
-    cpantesters3.dh.bytemark.co.uk cpantesters4.dh.bytemark.co.uk
-    monitor.preaction.me
+group all => (
+    'nact-chi-001.cpantesters.org',
+    'monitor.preaction.me',
 );
-group api => qw( cpantesters3.dh.bytemark.co.uk cpantesters4.dh.bytemark.co.uk );
-group backend => 'cpantesters4.dh.bytemark.co.uk';
-group web => 'cpantesters3.dh.bytemark.co.uk';
+
+group swarm_manager => (
+  'nact-chi-001.cpantesters.org'
+);
+group swarm_worker => (
+ 'osl-pdx-[002..002].cpantesters.org', { user => 'root' },
+);
+
+group api => qw( nact-chi-001.cpantesters.org );
+group backend => qw( nact-chi-001.cpantesters.org );
+group web => qw( nact-chi-001.cpantesters.org );
 group monitor => 'monitor.preaction.me';
-group legacy => 'cpantesters3.dh.bytemark.co.uk';
-group cpan => 'cpantesters4.dh.bytemark.co.uk';
+group cpan => qw( nact-chi-001.cpantesters.org );
 
 # The prod database is _not_ accessible via SSH from the outside world
 #group database => '216.246.80.45';
@@ -124,7 +133,7 @@ group database => 'db-primary-1.cpantesters.org';
 #######################################################################
 # Settings
 
-set perl_version => '5.24.0';
+set perl_version => '5.42.0';
 set perlbrew_root => '/opt/local/perlbrew';
 
 set common_packages => [ qw/
@@ -189,6 +198,19 @@ environment vm => sub {
 #######################################################################
 # Tasks
 
+=head2 info
+
+Print out the info for the machine, to be used in the CMDB.
+
+=cut
+
+desc 'Show host info';
+task info =>
+    sub {
+      my %hw_info = Rex::Hardware->get('All');
+      print Dump(\%hw_info);
+    };
+
 =head2 prepare
 
     rex -g api prepare
@@ -214,14 +236,20 @@ task prepare =>
             install package => $_ for @{ get 'common_packages' };
 
             Rex::Logger::info( "Adding sudo group to sudoers" );
-            append_if_no_such_line '/etc/sudoers',
-                '%sudo ALL=(ALL:ALL) ALL';
+            file '/etc/sudoers.d/sudo-group',
+                owner => 'root',
+                group => 'root',
+                mode => '600', # u+rwx go-rwx
+                content => '%sudo ALL=(ALL:ALL) ALL',
+                ;
 
             Rex::Logger::info( "Adding `cpantesters` to sudo" );
-            append_if_no_such_line '/etc/sudoers',
-                'ALL ALL=(cpantesters) NOPASSWD: ALL';
-            append_if_no_such_line '/etc/sudoers',
-                '%www-data ALL=(cpantesters) NOPASSWD: ALL';
+            file '/etc/sudoers.d/cpantesters',
+                owner => 'root',
+                group => 'root',
+                mode => '600', # u+rwx go-rwx
+                content => "ALL ALL=(cpantesters) NOPASSWD: ALL\n%www-data ALL=(cpantesters) NOPASSWD: ALL",
+                ;
         };
     };
 
@@ -315,6 +343,10 @@ task prepare_cpan =>
             Rex::Logger::info( "Checking CPAN packages" );
             install package => $_ for @{ get 'cpan_packages' };
 
+            Rex::Logger::info( "Disabling system runit" );
+            run 'systemctl stop runit';
+            run 'systemctl disable runit';
+
             Rex::Logger::info( 'Creating CPAN user' );
             account cpan =>
                 ensure => 'present',
@@ -324,10 +356,12 @@ task prepare_cpan =>
                 create_home => TRUE;
 
             Rex::Logger::info( 'Allowing sudo to `cpan` for everyone' );
-            append_if_no_such_line '/etc/sudoers',
-                'ALL ALL=(cpan) NOPASSWD: ALL';
-            append_if_no_such_line '/etc/sudoers',
-                '%www-data ALL=(cpan) NOPASSWD: ALL';
+            file '/etc/sudoers.d/cpan',
+                content => "ALL ALL=(cpan) NOPASSWD: ALL\n%www-data ALL=(cpan) NOPASSWD: ALL",
+                owner => 'root',
+                group => 'root',
+                mode => '600', # u+rwx go-rwx
+                ;
 
             Rex::Logger::info( 'Setting up cpan user environment' );
             for my $file ( qw( .profile .bash_profile ) ) {
@@ -446,6 +480,7 @@ task prepare_cpan =>
                 ;
 
             Rex::Logger::info( 'Configuring Apache2' );
+            run 'a2enmod ' . $_ for qw( proxy proxy_http proxy_wstunnel rewrite );
             _deploy_include_files();
             _deploy_group_sites( 'cpan' );
 
@@ -972,73 +1007,6 @@ task import_dashboards =>
                 next;
             }
         }
-    };
-
-=head2 update_legacy_config
-
-This updates the configuration for the legacy applications to ensure they
-are using the correct database.
-
-=cut
-
-desc 'Update the config for the legacy applications to ensure they use the correct database';
-task update_legacy_config =>
-    group => [qw( legacy )],
-    sub {
-        my %legacy_config = (
-            '/media/backend/cpantesters/page-requests' => {
-                config => [qw(
-                    data/settings.ini
-                )],
-            },
-            '/media/backend/cpantesters/generate' => {
-                config => [qw(
-                    data/parse.ini data/regenerate.ini
-                    data/settings.ini data/tail.ini
-                )],
-            },
-            '/media/backend/cpantesters/reports-mailer' => {
-                config => [qw(
-                    data/preferences-daily.ini data/preferences.ini
-                    data/preferences-weekly.ini
-                )],
-            },
-            '/media/backend/cpantesters/cpanstats' => {
-                config => [qw( data/addresses.ini data/settings.ini )],
-            },
-            '/media/backend/cpantesters/release' => {
-                config => [qw( data/release.ini )],
-            },
-            '/media/backend/cpantesters/uploads' => {
-                config => [qw( data/uploads.ini )],
-            },
-            '/media/web/www/cpanadmin' => {
-                config => [qw( cgi-bin/config/settings.ini )],
-            },
-            '/media/web/www/cpanprefs' => {
-                config => [qw( cgi-bin/config/settings.ini )],
-            },
-            '/media/web/www/reports' => {
-                config => [qw( cgi-bin/config/settings.ini )],
-            },
-        );
-
-        my $database = get 'database_host';
-        my $dbuser = get 'database_user';
-        my $dbpass = get 'database_password';
-
-        ensure_sudo_password();
-        sudo sub {
-            for my $root ( keys %legacy_config ) {
-                for my $file ( @{ $legacy_config{ $root }{ config } } ) {
-                    my $path = join "/", $root, $file;
-                    Rex::Logger::info( sprintf 'Checking %s database settings...', $path );
-                    sed( qr{dbhost=\d+\.\d+\.\d+\.\d+}, "dbhost=$database", $path );
-                    sed( qr{dbuser=\w+}, "dbuser=$dbuser", $path );
-                    sed( qr{dbpass=.+}, "dbpass=$dbpass", $path );
-                }
-            }
-        };
     };
 
 =head2 service
