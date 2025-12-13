@@ -1,5 +1,21 @@
-FROM perl:5.26
-RUN cpanm --notest \
+FROM perl:5.42
+
+# Make directories that we expect to use as mountpoints during Kubernetes deployments
+RUN mkdir -p /data /run/secrets
+
+# Default debian image tries to clean APT after an install. We're using
+# cache mounts instead, so we do not want to clean it.
+RUN rm -f /etc/apt/apt.conf.d/docker-clean
+
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+  --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    echo "deb http://deb.debian.org/debian trixie-backports main" >> /etc/apt/sources.list.d/trixie-backports.list \
+    && apt update && apt install -y \
+        libdbd-mysql-perl \
+        libdbd-sqlite3-perl
+
+RUN --mount=type=cache,target=/root/.cpanm \
+  cpanm --notest \
     Carton \
     Dist::Zilla \
     Pod::Weaver::Section::Contributors \
@@ -49,15 +65,15 @@ RUN cpanm --notest \
     Log::Any \
     Log::Any::Adapter::MojoLog \
     Metabase::User::Profile \
-    Mojo::mysql \
     Sereal \
     Test::More \
     YAML::XS
 
-RUN echo "deb http://deb.debian.org/debian stretch-backports main" >> /etc/apt/sources.list.d/stretch-backports.list \
-    && apt-get update && apt-get install -y \
-        libdbd-mysql-perl \
-        libdbd-sqlite3-perl
+RUN --mount=type=cache,target=/root/.cpanm \
+  cpanm --notest \
+    DBD::MariaDB \
+    Mojo::mysql
+
 
 COPY ./wait-for-it.sh /root/wait-for-it.sh
 RUN chmod +x /root/wait-for-it.sh
@@ -68,7 +84,8 @@ RUN chmod +x /root/wait-for-it.sh
 # possible above, even though any changes here mean rebuilding every
 # downstream image...
 COPY ./dist /root/dist
-RUN bash -vlc 'for DIST in /root/dist/*; do \
+RUN --mount=type=cache,target=/root/.cpanm \
+  bash -vlc 'for DIST in /root/dist/*; do \
         echo "Building pre-release: $DIST"; \
         cpanm -v --notest $DIST; \
     done && rm -rf /root/dist'
