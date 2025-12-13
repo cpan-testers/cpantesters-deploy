@@ -1,4 +1,3 @@
-
 # CPANTesters Deploy
 
 This repository contains a development environment, deploy scripts, and
@@ -16,7 +15,7 @@ To use this environment, you must have:
 1. `make`
 2. `git`
 3. `docker`
-    * On MacOS and Windows, install [Docker Desktop](https://www.docker.com/products/docker-desktop)
+   - On MacOS and Windows, install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### Fetch Project Code
 
@@ -42,11 +41,11 @@ so `make compose` will be as fast as it can be. However, if you want to
 only build a certain container, you can use the following `make`
 targets:
 
-* `make docker-base`
-* `make docker-schema`
-* `make docker-backend`
-* `make docker-api`
-* `make docker-web`
+- `make docker-base`
+- `make docker-schema`
+- `make docker-backend`
+- `make docker-api`
+- `make docker-web`
 
 ### Run Test Cluster
 
@@ -57,9 +56,9 @@ runs a database upgrade (deploying the schema if it's missing).
 
 Once the cluster starts, you can test the web apps with these URLs:
 
-* <http://localhost:3000> - The main web app
-* <http://localhost:4000> - The API web app
-* <http://localhost:5000> - The legacy metabase web app
+- <http://localhost:3000> - The main web app
+- <http://localhost:4000> - The API web app
+- <http://localhost:5000> - The legacy metabase web app
 
 To view the logs from the docker containers, use `docker-compose logs`.
 The `-f` flag will follow the logs like `tail -f`.
@@ -119,7 +118,7 @@ When asked about the `transport?` value, use the value below
 
 This config file is also used by CPANPLUS and App-cpanminus-reporter.
 
-*NOTE:* CPAN::Reporter tries to stop you from sending duplicate reports
+_NOTE:_ CPAN::Reporter tries to stop you from sending duplicate reports
 by keeping track of the reports you've sent. If you get this message,
 you should clear the cache in `~/.cpanreporter/reports-sent.db`.
 
@@ -152,7 +151,7 @@ database and then the Metabase can be decomissioned.
 ### Backend ETL (`cpantesters-backend`)
 
 The backend processes turn the full test reports into summaries,
-statistics, and metrics.  These processes also send out the regular
+statistics, and metrics. These processes also send out the regular
 report e-mails, summarize the raw reports in to easily-queried tables,
 and maintain the data the web app requires.
 
@@ -165,19 +164,58 @@ use. There are also APIs available from the web frontend.
 The web app has its own database to manage user accounts and
 preferences.
 
+## Production System
+
+The production system is a `k3s` Kubernetes cluster in an essentially stock
+configuration.
+
+### K3S Server Configuration
+
+The primary k3s server is nact-pdx-001 and was created using their quick-start shell script.
+After much pain and confusion, I figured out that the wireguard-native backend for the
+Flannel networking system fixed some cross-node networking issues I was having.
+
+    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-backend=wireguard-native" sh -
+
+### K3S Node Configuration
+
+The other systems were joined to the Kubernetes cluster as nodes using the same quick-start
+shell script. The `K3S_TOKEN` is located on the server node in the file `/var/lib/rancher/k3s/server/node-token`.
+
+    curl -sfL https://get.k3s.io | K3S_URL=https://nact-pdx-001.cpantesters.org:6443 K3S_TOKEN=... sh -
+
+### Added Cluster Services
+
+These are cluster-wide services added to the K3S deployment for use by CPAN Testers.
+
+#### Longhorn
+
+We use Longhorn for persistent volume claims. Longhorn requires `iscsiadm` is installed on the
+systems. Longhorn itself is managed by the Helm chart in `kube-system/longhorn.yml`.
+
+### CPAN Testers deployment
+
+The CPAN Testers services are described in individual files in the `kube/` directory. A simple
+`kubectl apply -R -f kube/` should update the cluster to the correct state.
+
+### Working with the Kubernetes Cluster
+
+- TODO: How to set up kubectl
+- TODO: Set up kubedash?
+
 ## Repository Overview
 
 ### Rexfile
 
-CPANTesters is managed with [Rex](http://rexify.org). The `Rexfile`
-contains the main routines for the CPANTesters deploy processes. To
-see the documentation for deploying, do `perldoc ./Rexfile`.
+CPANTesters was managed with [Rex](http://rexify.org). In the future, the `Rexfile`
+will contain the necessary configuration to setup the Kubernetes servers
+and add nodes to the cluster.
 
 ### Dockerfile
 
-CPAN Testers is currently being migrated to Docker containers to make it
-easier to develop and deploy. During the transition, Docker is used for
-development, but production deployment is done using Rex.
+CPAN Testers is uses Docker containers to make it
+easier to develop and deploy. Docker Compose is used for development, and
+the production deployment uses Kubernetes.
 
 The Dockerfile in this repository builds a base image with prereqs that
 all the apps need. The Dockerfiles in the `src` repositories are
@@ -193,14 +231,21 @@ Started", above.
 The location for the CPAN Testers source repositories. Use `make src` to
 populate these.
 
+### kube/
+
+This contains the Kubernetes manifests and Helm charts used in the production
+Kubernetes cluster.
+
 ### `etc/`
 
 This directory contains configuration files and templates which are
 deployed to the servers.
+
+_NOTE_: Much of this is left-over from before CPAN Testers was using Kubernetes.
+It will be cleaned up eventually.
 
 ### `dist/`
 
 CPAN distributions to include in the CPAN Testers base image. This
 allows pre-release versions of CPAN modules to be tested in the
 development environment.
-
