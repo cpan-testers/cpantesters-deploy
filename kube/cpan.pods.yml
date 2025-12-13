@@ -111,3 +111,38 @@ spec:
             requests:
               cpu: 0.1
               memory: 20M
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpan
+  namespace: cpan
+spec:
+  selector:
+    app: cpan-http
+  type: NodePort
+  ports:
+    - name: api
+      protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: cpan
+  namespace: cpan
+spec:
+  rules:
+    - host: cpan.cpantesters.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cpan
+                port:
+                  number: 80
