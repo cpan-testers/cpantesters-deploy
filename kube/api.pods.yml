@@ -1,0 +1,140 @@
+# This is `api.cpantesters.org`, the Mojolicious API server
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-conf
+  namespace: default
+data:
+  api-conf: |
+    {
+        db => {
+            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
+            username => undef,
+            password => undef,
+            args => {
+                limit_dialect => 'LimitXY',
+            },
+        },
+        beam_minion => {
+          mysql => {
+            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
+            username => undef,
+            password => undef,
+          },
+        },
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: default
+  labels:
+    app: api
+spec:
+  selector:
+    matchLabels:
+      app: api
+  replicas: 3
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: api
+      labels:
+        app: api
+    spec:
+      volumes:
+        - name: conf-volume
+          configMap:
+            name: api-conf
+            items:
+              - key: api-conf
+                path: api.conf
+        - name: etc-volume
+          configMap:
+            name: etc
+            items:
+              - key: beam-minion
+                path: beam-minion.yml
+        - name: mysql-secret
+          secret:
+            secretName: mysql-secret
+
+      containers:
+        - name: api
+          image: cpantesters/api:latest
+          command:
+            - cpantesters-api
+            - prefork
+            - -I
+            - "30"
+            - -H
+            - "300"
+          env:
+            - name: BEAM_MINION
+              value: file:///etc/minion/beam-minion.yml
+            - name: BEAM_PATH
+              value: /etc/container
+            - name: MOJO_LOG_LEVEL
+              value: debug
+            - name: MOJO_HOME
+              value: /app
+            - name: MOJO_CONFIG
+              value: /etc/app/api.conf
+            - name: MOJO_LOG_SHORT
+              value: "1"
+            - name: MOJO_INACTIVITY_TIMEOUT
+              value: "300"
+            - name: MOJO_HEARTBEAT_INTERVAL
+              value: "30"
+            - name: MOJO_PUBSUB_EXPERIMENTAL
+              value: "1"
+            - name: MOJO_MAX_MESSAGE_SIZE
+              value: "33554432" # approx 32M
+          volumeMounts:
+            - mountPath: /etc/app
+              name: conf-volume
+            - mountPath: /etc/minion
+              name: etc-volume
+            - mountPath: /etc/secrets
+              name: mysql-secret
+              readOnly: true
+          resources:
+            requests:
+              cpu: 0.5
+              memory: 500M
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: default
+spec:
+  selector:
+    app: api
+  type: NodePort
+  ports:
+    - name: api
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: api
+  namespace: default
+spec:
+  rules:
+    - host: api.cpantesters.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80

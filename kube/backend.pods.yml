@@ -1,0 +1,106 @@
+# This handles the backend workers that process reports.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: container
+  namespace: default
+data:
+  log: |
+    syslog:
+      $class: Log::Any::Adapter
+      $lifecycle: eager
+      $method: set
+      $args:
+        - Stderr
+        - log_level
+        - "DEBUG"
+  db: |
+    schema:
+      $class: CPAN::Testers::Schema
+      $method: connect
+      $args:
+        - "dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats"
+        - ~
+        - ~
+        - limit_dialect: LimitXY
+    metabase_dbh:
+      $class: DBI
+      $method: connect
+      $args:
+        - "dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=metabase"
+        - ~
+        - ~
+        - AutoCommit: 1
+          RaiseError: 1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: default
+  labels:
+    app: backend
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  replicas: 2
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: backend
+      labels:
+        app: backend
+    spec:
+      volumes:
+        - name: container-volume
+          configMap:
+            name: container
+            items:
+              - key: db
+                path: db.yml
+              - key: log
+                path: log.yml
+        - name: etc-volume
+          configMap:
+            name: etc
+            items:
+              - key: beam-minion
+                path: beam-minion.yml
+        - name: mysql-secret
+          secret:
+            secretName: mysql-secret
+
+      containers:
+        - name: backend
+          image: cpantesters/backend:latest
+          command:
+            - beam
+            - minion
+            - worker
+            - -j
+            - "5"
+            - -s
+            - "0"
+          env:
+            - name: BEAM_MINION
+              value: file:///etc/minion/beam-minion.yml
+            - name: BEAM_PATH
+              value: /etc/container:/app/etc/container
+            - name: MOJO_LOG_LEVEL
+              value: debug
+          volumeMounts:
+            - mountPath: /etc/container
+              name: container-volume
+            - mountPath: /etc/minion
+              name: etc-volume
+            - mountPath: /etc/secrets
+              name: mysql-secret
+              readOnly: true
+          resources:
+            requests:
+              cpu: 1
+              memory: 250M
+      restartPolicy: Always

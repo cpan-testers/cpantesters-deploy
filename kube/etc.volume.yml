@@ -1,0 +1,15 @@
+# This is the configuration file for Beam::Minion to ensure it is shared by all the
+# apps that connect to it. This includes things writing new reports and the workers
+# that process those reports.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etc
+  namespace: default
+data:
+  beam-minion: |
+    mysql:
+      dsn: dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats
+      username: ~
+      password: ~

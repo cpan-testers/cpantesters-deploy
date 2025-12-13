@@ -1,0 +1,29 @@
+# CPAN Testers CPAN/BackPAN mirroring image.
+# This Docker image contains the necessary things to synchronize a CPAN mirror
+# and build a BackPAN from it.
+
+FROM perl:stable
+
+# Default debian image tries to clean APT after an install. We're using
+# cache mounts instead, so we do not want to clean it.
+RUN rm -f /etc/apt/apt.conf.d/docker-clean
+
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+  --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    echo "deb http://deb.debian.org/debian trixie-backports main" >> /etc/apt/sources.list.d/trixie-backports.list \
+    && apt update && apt install -y \
+      rsync
+
+RUN cpanm --notest \
+  JSON \
+  File::Rsync::Mirror::Recent \
+  BackPAN::Index::Create
+RUN mkdir /app
+RUN mkdir /data
+ADD bin/backpan.sh /app/backpan.sh
+
+ENV SRC=cpan-rsync-master.perl.org
+ENV USER=barbie
+ENV DEST=/data/CPAN
+
+CMD rrr-client --verbose --user $USER --source "$SRC::CPAN/RECENT.recent" --target $DEST

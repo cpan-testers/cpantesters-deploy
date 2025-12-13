@@ -1,0 +1,113 @@
+# This is the public CPAN mirror hosted by CPAN Testers
+# TODO: Need rsync daemon mode
+# TODO: Need ingress for cpan
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cpan
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rsync-password
+  namespace: cpan
+data:
+  RSYNC_PASSWORD: |
+    ICAgIGI1Njg5aGJ3cnR5YmprCg==
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cpan-volume
+  namespace: cpan
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rrr-client
+  namespace: cpan
+  labels:
+    app: rrr-client
+spec:
+  selector:
+    matchLabels:
+      app: rrr-client
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: rrr-client
+      labels:
+        app: rrr-client
+    spec:
+      restartPolicy: Always
+      volumes:
+        - name: cpan-volume
+          persistentVolumeClaim:
+            claimName: cpan-volume
+      containers:
+        - name: rrr-client
+          image: cpantesters/cpan
+          volumeMounts:
+            - mountPath: /data/CPAN
+              name: cpan-volume
+          resources:
+            requests:
+              cpu: 0.5
+              memory: 100M
+          env:
+            - name: RSYNC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rsync-password
+                  key: RSYNC_PASSWORD
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpan-http
+  namespace: cpan
+  labels:
+    app: cpan-http
+spec:
+  selector:
+    matchLabels:
+      app: cpan-http
+  replicas: 2
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: nginx
+      labels:
+        app: cpan-http
+    spec:
+      restartPolicy: Always
+      volumes:
+        - name: cpan-volume
+          persistentVolumeClaim:
+            claimName: cpan-volume
+
+      containers:
+        - name: nginx
+          image: nginx:mainline-alpine
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html
+              name: cpan-volume
+              readOnly: true
+          resources:
+            requests:
+              cpu: 0.1
+              memory: 20M
