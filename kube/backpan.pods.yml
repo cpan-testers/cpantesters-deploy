@@ -1,89 +1,120 @@
 # This is for `backpan.cpantesters.org`, including Neil Bowers's backpan indexer.
 #
-# TODO: This will probably work if we can get storage added to the Kube cluster
 
-# ---
-# apiVersion: v1
-# kind: PersistentVolumeClaim
-# metadata:
-#   name: backpan-volume
-#   namespace: cpan
-# spec:
-#   accessModes:
-#     - ReadWriteMany
-#   storageClassName: longhorn
-#   resources:
-#     requests:
-#       storage: 50Gi
-#
-# ---
-# apiVersion: batch/v1
-# kind: CronJob
-# metadata:
-#   name: backpan-index
-#   namespace: cpan
-# spec:
-#   schedule: "50 * * * *"
-#   concurrencyPolicy: Forbid
-#   jobTemplate:
-#     spec:
-#       template:
-#         spec:
-#           restartPolicy: OnFailure
-#           volumes:
-#             - name: cpan-volume
-#               persistentVolumeClaim:
-#                 claimName: cpan-volume
-#             - name: backpan-volume
-#               persistentVolumeClaim:
-#                 claimName: backpan-volume
-#           containers:
-#             - name: build-tail-log
-#               image: cpantesters/cpan:latest
-#               command:
-#                 - sh
-#                 - /app/backpan.sh
-#               volumeMounts:
-#                 - mountPath: /data/CPAN
-#                   name: cpan-volume
-#                   readOnly: true
-#                 - mountPath: /data/BACKPAN
-#                   name: backpan-volume
-# ---
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: backpan-http
-#   namespace: cpan
-#   labels:
-#     app: backpan-http
-# spec:
-#   selector:
-#     matchLabels:
-#       app: backpan-http
-#   replicas: 2
-#   template:
-#     metadata:
-#       annotations:
-#         kubectl.kubernetes.io/default-container: nginx
-#       labels:
-#         app: backpan-http
-#     spec:
-#       restartPolicy: Always
-#       volumes:
-#         - name: backpan-volume
-#           persistentVolumeClaim:
-#             claimName: backpan-volume
-#
-#       containers:
-#         - name: nginx
-#           image: nginx:mainline-alpine
-#           volumeMounts:
-#             - mountPath: /usr/share/nginx/html
-#               name: backpan-volume
-#               readOnly: true
-#           resources:
-#             requests:
-#               cpu: 0.1
-#               memory: 20M
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backpan-volume
+  namespace: cpan
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 75Gi
 
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backpan-index
+  namespace: cpan
+spec:
+  schedule: "50 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: cpan-volume
+              persistentVolumeClaim:
+                claimName: cpan-volume
+            - name: backpan-volume
+              persistentVolumeClaim:
+                claimName: backpan-volume
+          containers:
+            - name: build-backpan-index
+              image: cpantesters/cpan:latest
+              command:
+                - sh
+                - /app/backpan.sh
+              volumeMounts:
+                - mountPath: /data/CPAN
+                  name: cpan-volume
+                - mountPath: /data/BACKPAN
+                  name: backpan-volume
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backpan-http
+  namespace: cpan
+  labels:
+    app: backpan-http
+spec:
+  selector:
+    matchLabels:
+      app: backpan-http
+  replicas: 2
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: nginx
+      labels:
+        app: backpan-http
+    spec:
+      restartPolicy: Always
+      volumes:
+        - name: backpan-volume
+          persistentVolumeClaim:
+            claimName: backpan-volume
+
+      containers:
+        - name: nginx
+          image: nginx:mainline-alpine
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html
+              name: backpan-volume
+          resources:
+            requests:
+              cpu: 0.1
+              memory: 20M
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backpan
+  namespace: cpan
+spec:
+  selector:
+    app: backpan-http
+  type: NodePort
+  ports:
+    - name: api
+      protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: backpan
+  namespace: cpan
+spec:
+  rules:
+    - host: backpan.cpantesters.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backpan
+                port:
+                  number: 80

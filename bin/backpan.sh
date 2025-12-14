@@ -8,6 +8,7 @@ date_format="%Y/%m/%d %H:%M:%S"
 
 echo $(date +"$date_format") "START"
 echo $(date +"$date_format") "copying files from CPAN to BACKPAN"
+mkdir -p $BACKPAN/authors/id
 rsync --exclude CHECKSUMS -vrptgx $CPAN/authors/id/ $BACKPAN/authors/id/ 2>&1
 
 echo $(date +"$date_format") "creating BACKPAN indices"
