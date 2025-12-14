@@ -47,7 +47,7 @@ set common_packages_debian => [
   # Needed by Flannel
   qw( wireguard ),
   # Needed by Longhorn
-  qw( iscsiadm ),
+  qw( open-iscsi nfs-common cryptsetup ),
 ];
 set common_packages_rocky => [
   # Needed by Flannel
