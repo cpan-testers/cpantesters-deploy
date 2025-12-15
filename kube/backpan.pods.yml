@@ -22,7 +22,7 @@ metadata:
   name: backpan-index
   namespace: cpan
 spec:
-  schedule: "50 * * * *"
+  schedule: "0 */8 * * *"
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
