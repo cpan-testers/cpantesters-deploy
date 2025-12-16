@@ -1,0 +1,137 @@
+# This is `cpantesters.org`, the Mojolicious web app
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-conf
+  namespace: default
+data:
+  web-conf: |
+    {
+        schema => {
+            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
+            username => undef,
+            password => undef,
+            args => {
+                limit_dialect => 'LimitXY',
+            },
+        },
+        web_schema => {
+            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=web',
+            username => undef,
+            password => undef,
+            args => {
+                limit_dialect => 'LimitXY',
+            },
+        },
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: default
+  labels:
+    app: web
+spec:
+  selector:
+    matchLabels:
+      app: web
+  replicas: 3
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: web
+      labels:
+        app: web
+    spec:
+      volumes:
+        - name: conf-volume
+          configMap:
+            name: web-conf
+            items:
+              - key: web-conf
+                path: web.conf
+        - name: mysql-secret
+          secret:
+            secretName: mysql-secret
+
+      containers:
+        - name: web
+          image: cpantesters/web:latest
+          command:
+            - cpantesters-web
+            - prefork
+            - -I
+            - "30"
+            - -H
+            - "300"
+          env:
+            - name: MOJO_LOG_LEVEL
+              value: debug
+            - name: MOJO_HOME
+              value: /app
+            - name: MOJO_CONFIG
+              value: /etc/app/web.conf
+            - name: MOJO_LOG_SHORT
+              value: "1"
+            - name: MOJO_INACTIVITY_TIMEOUT
+              value: "300"
+            - name: MOJO_HEARTBEAT_INTERVAL
+              value: "30"
+            - name: MOJO_MAX_MESSAGE_SIZE
+              value: "33554432" # approx 32M
+          volumeMounts:
+            - mountPath: /etc/app
+              name: conf-volume
+            - mountPath: /etc/secrets
+              name: mysql-secret
+              readOnly: true
+          resources:
+            requests:
+              cpu: 0.5
+              memory: 250M
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: default
+spec:
+  selector:
+    app: web
+  type: NodePort
+  ports:
+    - name: web
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: web
+  namespace: default
+spec:
+  rules:
+    - host: cpantesters.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80
+    - host: www.cpantesters.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80
