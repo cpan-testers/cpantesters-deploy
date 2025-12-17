@@ -8,7 +8,7 @@ metadata:
 data:
   web-conf: |
     {
-        schema => {
+        db => {
             dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
             username => undef,
             password => undef,
@@ -16,7 +16,7 @@ data:
                 limit_dialect => 'LimitXY',
             },
         },
-        web_schema => {
+        web_db => {
             dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=web',
             username => undef,
             password => undef,

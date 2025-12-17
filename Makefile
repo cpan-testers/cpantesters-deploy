@@ -41,7 +41,7 @@ docker-backend: docker-base docker-schema
 	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
-docker-web: docker-base docker-schema
+docker-web:
 	@BUILD="web"; \
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
