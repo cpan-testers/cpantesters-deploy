@@ -49,7 +49,7 @@ spec:
   selector:
     matchLabels:
       app: legacy-metabase
-  replicas: 3
+  replicas: 2
   template:
     metadata:
       annotations:
@@ -84,7 +84,7 @@ spec:
             - cpantesters-legacy-metabase
             - prefork
             - -w
-            - "10"
+            - "2"
             - -G
             - "1500"
             - -H
@@ -168,6 +168,7 @@ metadata:
 spec:
   schedule: "*/5 * * * *"
   concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
   jobTemplate:
     spec:
       template:

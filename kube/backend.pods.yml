@@ -46,7 +46,7 @@ spec:
   selector:
     matchLabels:
       app: backend
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       annotations:
