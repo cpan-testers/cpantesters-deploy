@@ -72,6 +72,7 @@ RUN --mount=type=cache,target=/root/.cpanm \
 RUN --mount=type=cache,target=/root/.cpanm \
   cpanm --notest \
     DBD::MariaDB \
+    DBIx::Class::Storage::DBI::MariaDB \
     Mojo::mysql
 
 
