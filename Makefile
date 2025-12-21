@@ -25,7 +25,7 @@ docker-base:
 	@docker build . --platform linux/amd64 --tag cpantesters/base >build-base.log \
 	    || echo "ERR: Build failed. See build-base.log";
 
-docker-schema: docker-base
+docker-schema:
 	@BUILD="schema"; \
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
@@ -33,7 +33,7 @@ docker-schema: docker-base
 	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
-docker-backend: docker-base docker-schema
+docker-backend:
 	@BUILD="backend"; \
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
@@ -49,7 +49,7 @@ docker-web:
 	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
-docker-api: docker-base docker-schema
+docker-api:
 	@BUILD="api"; \
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
@@ -64,7 +64,7 @@ docker-cpan:
 	docker build . -f Dockerfile.cpan --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
-docker: docker-backend docker-web docker-api
+docker-all: docker-base docker-schema docker-backend docker-web docker-api docker-cpan
 
 publish:
 	@echo 'Publishing cpantesters to Docker Hub'
