@@ -110,6 +110,10 @@ spec:
               value: "1"
             - name: MOJO_MAX_MESSAGE_SIZE
               value: "33554432" # approx 32M
+            - name: OTEL_SERVICE_NAME
+              value: "legacy-metabase"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://signoz-install-otel-collector.telemetry.svc:4318"
           volumeMounts:
             - mountPath: /etc/app
               name: conf-volume

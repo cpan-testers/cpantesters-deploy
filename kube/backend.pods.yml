@@ -91,6 +91,10 @@ spec:
               value: /etc/container:/app/etc/container
             - name: MOJO_LOG_LEVEL
               value: debug
+            - name: OTEL_SERVICE_NAME
+              value: "backend"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://signoz-install-otel-collector.telemetry.svc:4318"
           volumeMounts:
             - mountPath: /etc/container
               name: container-volume

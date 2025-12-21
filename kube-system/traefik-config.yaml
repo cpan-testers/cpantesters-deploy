@@ -1,0 +1,46 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    experimental:
+      otlpLogs: true
+
+    env:
+    # work around trace setup error "error detecting resource: user: Current requires cgo or $USER set in environment"
+    - name: USER
+      value: "nobody"
+
+    # Enable OpenTelemetry Tracing
+    tracing:
+      otlp:
+        enabled: true
+        http:
+          enabled: true
+          endpoint: "http://signoz-install-otel-collector.telemetry.svc:4318/v1/traces"
+
+    # Enable OpenTelemetry Metrics
+    metrics:
+      prometheus: null
+      otlp:
+        enabled: true
+        http:
+          enabled: true
+          endpoint: "http://signoz-install-otel-collector.telemetry.svc:4318/v1/metrics"
+        pushInterval: "10s"
+
+    # Enable OpenTelemetry logs
+    log:
+      otlp:
+        http:
+          enabled: true
+          endpoint: "http://signoz-install-otel-collector.telemetry.svc:4318/v1/logs"
+
+    # Enable OpenTelemetry access logs
+    accesslog:
+      otlp:
+        http:
+          enabled: true
+          endpoint: http://signoz-install-otel-collector.telemetry.svc:4318/v1/logs

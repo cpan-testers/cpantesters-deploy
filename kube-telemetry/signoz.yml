@@ -1,0 +1,47 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  annotations:
+    helmcharts.cattle.io/managed-by: helm-controller
+  finalizers:
+    - wrangler.cattle.io/on-helm-chart-remove
+  generation: 1
+  name: signoz-install
+  namespace: kube-system
+spec:
+  version: 0.104.1
+  chart: signoz
+  repo: https://charts.signoz.io
+  failurePolicy: abort
+  targetNamespace: telemetry
+  createNamespace: true
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  annotations:
+    helmcharts.cattle.io/managed-by: helm-controller
+  finalizers:
+    - wrangler.cattle.io/on-helm-chart-remove
+  generation: 1
+  name: signoz-k8s-infra
+  namespace: kube-system
+spec:
+  version: 0.15.0
+  chart: k8s-infra
+  repo: https://charts.signoz.io
+  failurePolicy: abort
+  targetNamespace: telemetry
+  createNamespace: true
+  valuesContent: |-
+    global:
+      cloud: others
+      clusterName: cpantesters
+      deploymentEnvironment: production
+    otelCollectorEndpoint: signoz-install-otel-collector.telemetry.svc:4317
+    otelInsecure: true
+    presets:
+      otlpExporter:
+        enabled: true
+      loggingExporter:
+        enabled: false

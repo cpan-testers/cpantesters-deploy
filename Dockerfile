@@ -67,7 +67,11 @@ RUN --mount=type=cache,target=/root/.cpanm \
     Metabase::User::Profile \
     Sereal \
     Test::More \
-    YAML::XS
+    YAML::XS \
+    OpenTelemetry::SDK \
+    Mojolicious::Plugin::OpenTelemetry \
+    Log::Any::Adapter::OpenTelemetry \
+    IO::Async::Loop::Mojo
 
 RUN --mount=type=cache,target=/root/.cpanm \
   cpanm --notest \
