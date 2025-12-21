@@ -172,7 +172,10 @@ spec:
               resources:
                 requests:
                   cpu: 1
-                  memory: 250M
+                  memory: 400M
+                limits:
+                  cpu: 2
+                  memory: 500M
 
 ---
 apiVersion: batch/v1

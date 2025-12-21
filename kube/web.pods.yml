@@ -37,7 +37,7 @@ spec:
   selector:
     matchLabels:
       app: web
-  replicas: 2
+  replicas: 6
   template:
     metadata:
       annotations:
@@ -95,8 +95,11 @@ spec:
               readOnly: true
           resources:
             requests:
+              cpu: 0.1
+              memory: 350M
+            limits:
               cpu: 0.5
-              memory: 250M
+              memory: 450M
       restartPolicy: Always
 ---
 apiVersion: v1

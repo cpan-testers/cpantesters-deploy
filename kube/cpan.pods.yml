@@ -65,8 +65,11 @@ spec:
               name: cpan-volume
           resources:
             requests:
-              cpu: 0.5
-              memory: 100M
+              cpu: 1
+              memory: 200M
+            limits:
+              cpu: 1
+              memory: 250M
           env:
             - name: RSYNC_PASSWORD
               valueFrom:
