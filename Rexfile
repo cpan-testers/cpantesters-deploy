@@ -128,8 +128,8 @@ Prepare the machine to serve as a k3s server.
 
 =cut
 
-desc 'Prepare the machine to be a Kubernetes server';
-task prepare =>
+desc 'Prepare the machine to be a Kubernetes server (k3s server)';
+task prepare_server =>
     sub {
         sudo sub {
             # TODO: Should install k3s and join the cluster as a server
@@ -144,11 +144,10 @@ Prepare the machine to serve as a k3s node.
 
 =cut
 
-desc 'Prepare the machine to be a Kubernetes node';
-task prepare =>
+desc 'Prepare the machine to be a Kubernetes node (k3s agent)';
+task prepare_agent =>
     sub {
         sudo sub {
             # TODO: Should install k3s and join the cluster as a node
         }
     };
-
