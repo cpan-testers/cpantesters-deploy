@@ -202,10 +202,10 @@ spec:
               resources:
                 requests:
                   cpu: 0.01
-                  memory: 300M
+                  memory: 150M
                 limits:
                   cpu: 0.05
-                  memory: 500M
+                  memory: 250M
               volumeMounts:
                 - mountPath: /data/tail
                   name: metabase-tail-log
