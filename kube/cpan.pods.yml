@@ -20,6 +20,28 @@ data:
 
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+  namespace: cpan
+data:
+  default: |-
+    server {
+      listen       80;
+      listen  [::]:80;
+      server_name  localhost;
+
+      #access_log  /var/log/nginx/host.access.log  main;
+
+      location / {
+          root   /usr/share/nginx/html;
+          index  index.html index.htm;
+          autoindex on;
+      }
+    }
+
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: cpan-volume
@@ -102,6 +124,12 @@ spec:
         - name: cpan-volume
           persistentVolumeClaim:
             claimName: cpan-volume
+        - name: nginx-conf-volume
+          configMap:
+            name: nginx-conf
+            items:
+              - key: default
+                path: default.conf
 
       containers:
         - name: nginx
@@ -110,6 +138,8 @@ spec:
             - mountPath: /usr/share/nginx/html
               name: cpan-volume
               readOnly: true
+            - mountPath: /etc/nginx/conf.d
+              name: nginx-conf-volume
           resources:
             requests:
               cpu: 0.1

@@ -73,6 +73,12 @@ spec:
         - name: backpan-volume
           persistentVolumeClaim:
             claimName: backpan-volume
+        - name: nginx-conf-volume
+          configMap:
+            name: nginx-conf
+            items:
+              - key: default
+                path: default.conf
 
       containers:
         - name: nginx
@@ -80,6 +86,8 @@ spec:
           volumeMounts:
             - mountPath: /usr/share/nginx/html
               name: backpan-volume
+            - mountPath: /etc/nginx/conf.d
+              name: nginx-conf-volume
           resources:
             requests:
               cpu: 0.1
