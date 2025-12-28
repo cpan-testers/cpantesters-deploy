@@ -105,8 +105,11 @@ spec:
               readOnly: true
           resources:
             requests:
+              cpu: 0.4
+              memory: 500M
+            limits:
               cpu: 1
-              memory: 250M
+              memory: 700M
       restartPolicy: Always
 
 ---
@@ -157,8 +160,6 @@ spec:
                   value: /etc/container:/app/etc/container
                 - name: MOJO_LOG_LEVEL
                   value: debug
-                - name: OTEL_SERVICE_NAME
-                  value: "backend"
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: "http://signoz-install-otel-collector.telemetry.svc:4318"
               volumeMounts:
@@ -171,11 +172,11 @@ spec:
                   readOnly: true
               resources:
                 requests:
-                  cpu: 1
-                  memory: 400M
+                  cpu: 0.01
+                  memory: 100M
                 limits:
-                  cpu: 2
-                  memory: 500M
+                  cpu: 0.1
+                  memory: 200M
 
 ---
 apiVersion: batch/v1
@@ -225,8 +226,6 @@ spec:
                   value: /etc/container:/app/etc/container
                 - name: MOJO_LOG_LEVEL
                   value: debug
-                - name: OTEL_SERVICE_NAME
-                  value: "backend"
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: "http://signoz-install-otel-collector.telemetry.svc:4318"
               volumeMounts:

@@ -126,8 +126,11 @@ spec:
               name: metabase-tail-log
           resources:
             requests:
+              cpu: 0.01
+              memory: 250M
+            limits:
               cpu: 0.5
-              memory: 1000M
+              memory: 750M
       restartPolicy: Always
 
 ---
@@ -201,11 +204,11 @@ spec:
                 - app->refresh_tail_log
               resources:
                 requests:
-                  cpu: 0.01
-                  memory: 150M
-                limits:
                   cpu: 0.05
-                  memory: 250M
+                  memory: 120M
+                limits:
+                  cpu: 0.75
+                  memory: 170M
               volumeMounts:
                 - mountPath: /data/tail
                   name: metabase-tail-log

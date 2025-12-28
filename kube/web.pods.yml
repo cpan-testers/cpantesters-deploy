@@ -37,7 +37,7 @@ spec:
   selector:
     matchLabels:
       app: web
-  replicas: 6
+  replicas: 4
   template:
     metadata:
       annotations:
@@ -63,7 +63,7 @@ spec:
             - cpantesters-web
             - prefork
             - -w
-            - "2"
+            - "4"
             - -I
             - "30"
             - -H
@@ -95,11 +95,11 @@ spec:
               readOnly: true
           resources:
             requests:
-              cpu: 0.1
-              memory: 350M
-            limits:
               cpu: 0.5
               memory: 450M
+            limits:
+              cpu: 1
+              memory: 700M
       restartPolicy: Always
 ---
 apiVersion: v1
