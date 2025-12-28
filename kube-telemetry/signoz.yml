@@ -44,7 +44,10 @@ spec:
       otlpExporter:
         enabled: true
       loggingExporter:
-        enabled: false
+        enabled: true
+      logsCollection:
+        blacklist:
+          enabled: false
     otelDeployment:
       additionalEnvs:
         MYSQL_USERNAME:
@@ -69,9 +72,55 @@ spec:
               digest_text_limit: 120
               time_limit: 24h
               limit: 250
+            # We're using this to replace PMM, so we need a bunch
+            # of the currently-disabled metrics
+            events:
+              db.server.top_query:
+                enabled: true
+            metrics:
+              mysql.client.network.io:
+                enabled: true
+              mysql.commands:
+                enabled: true
+              mysql.connection.count:
+                enabled: true
+              mysql.connection.errors:
+                enabled: true
+              mysql.joins:
+                enabled: true
+              mysql.query.client.count:
+                enabled: true
+              mysql.query.count:
+                enabled: true
+              mysql.query.slow.count:
+                enabled: true
+              mysql.statement_event.count:
+                enabled: true
+              mysql.statement_event.wait.time:
+                enabled: true
+              mysql.table.lock_wait.read.count:
+                enabled: true
+              mysql.table.lock_wait.read.time:
+                enabled: true
+              mysql.table.lock_wait.write.count:
+                enabled: true
+              mysql.table.lock_wait.write.time:
+                enabled: true
+              mysql.table.rows:
+                enabled: false
+              mysql.table.size:
+                enabled: false
+
+        processors:
+          resource:
+            attributes:
+              - key: service.name
+                value: "mysql"
+                action: upsert
+
         service:
           pipelines:
             metrics/internal:
               receivers: [mysql]
-              processors: [batch]
-              exporters: []
+              processors: [resource, batch]
+              exporters: [otlp]
