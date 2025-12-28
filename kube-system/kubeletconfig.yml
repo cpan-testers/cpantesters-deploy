@@ -1,0 +1,23 @@
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+
+shutdownGracePeriod: 5s
+shutdownGracePeriodCriticalPods: 60s
+mergeDefaultEvictionSettings: true
+
+# Should be memory that can be allocated within a few seconds
+# so Kube can notice the memory pressure and evict pods
+evictionHard:
+  memory.available: "100Mi"
+
+# Should be how much the Kubernetes system uses outside
+# of pods (k3s, k3s-agent, kubelet, containerd, etc...)
+kubeReserved:
+  cpu: 100m
+  memory: 250Mi
+
+# Should be how much the system uses outside of Kubernetes
+# and pods (kernel, sshd, etc...)
+systemReserved:
+  cpu: 100m
+  memory: 200Mi
