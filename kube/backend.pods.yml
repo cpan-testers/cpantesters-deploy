@@ -1,40 +1,5 @@
 # This handles the backend workers that process reports.
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: container
-  namespace: default
-data:
-  log: |
-    syslog:
-      $class: Log::Any::Adapter
-      $lifecycle: eager
-      $method: set
-      $args:
-        - Stderr
-        - log_level
-        - "DEBUG"
-  db: |
-    schema:
-      $class: CPAN::Testers::Schema
-      $method: connect
-      $args:
-        - "dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats"
-        - ~
-        - ~
-        - limit_dialect: LimitXY
-    metabase_dbh:
-      $class: DBI
-      $method: connect
-      $args:
-        - "dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=metabase"
-        - ~
-        - ~
-        - AutoCommit: 1
-          RaiseError: 1
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:

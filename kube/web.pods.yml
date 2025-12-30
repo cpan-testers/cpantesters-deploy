@@ -1,31 +1,5 @@
 # This is `cpantesters.org`, the Mojolicious web app
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: web-conf
-  namespace: default
-data:
-  web-conf: |
-    {
-        db => {
-            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
-            username => undef,
-            password => undef,
-            args => {
-                limit_dialect => 'LimitXY',
-            },
-        },
-        web_db => {
-            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=web',
-            username => undef,
-            password => undef,
-            args => {
-                limit_dialect => 'LimitXY',
-            },
-        },
-    }
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:

@@ -1,32 +1,6 @@
 # This is the legacy metabase shim, hosted at `metabase.cpantesters.org`
 ---
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: legacy-metabase-conf
-  namespace: default
-data:
-  metabase-conf: |
-    {
-        db => {
-            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
-            username => undef,
-            password => undef,
-            args => {
-                limit_dialect => 'LimitXY',
-            },
-        },
-        beam_minion => {
-          mysql => {
-            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
-            username => undef,
-            password => undef,
-          },
-        },
-    }
-
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: metabase-tail-log
@@ -205,10 +179,10 @@ spec:
               resources:
                 requests:
                   cpu: 0.05
-                  memory: 120M
+                  memory: 200M
                 limits:
                   cpu: 0.75
-                  memory: 170M
+                  memory: 300M
               volumeMounts:
                 - mountPath: /data/tail
                   name: metabase-tail-log

@@ -1,0 +1,129 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-conf
+  namespace: default
+data:
+  api-conf: |
+    {
+        db => {
+            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
+            username => undef,
+            password => undef,
+            args => {
+                limit_dialect => 'LimitXY',
+            },
+        },
+        beam_minion => {
+          mysql => {
+            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
+            username => undef,
+            password => undef,
+          },
+        },
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-conf
+  namespace: default
+data:
+  web-conf: |
+    {
+        db => {
+            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
+            username => undef,
+            password => undef,
+            args => {
+                limit_dialect => 'LimitXY',
+            },
+        },
+        web_db => {
+            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=web',
+            username => undef,
+            password => undef,
+            args => {
+                limit_dialect => 'LimitXY',
+            },
+        },
+    }
+
+
+# This is the configuration file for Beam::Minion to ensure it is shared by all the
+# apps that connect to it. This includes things writing new reports and the workers
+# that process those reports.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etc
+  namespace: default
+data:
+  beam-minion: |
+    mysql:
+      dsn: dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats
+      username: ~
+      password: ~
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: container
+  namespace: default
+data:
+  log: |
+    syslog:
+      $class: Log::Any::Adapter
+      $lifecycle: eager
+      $method: set
+      $args:
+        - Stderr
+        - log_level
+        - "DEBUG"
+  db: |
+    schema:
+      $class: CPAN::Testers::Schema
+      $method: connect
+      $args:
+        - "dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats"
+        - ~
+        - ~
+        - limit_dialect: LimitXY
+    metabase_dbh:
+      $class: DBI
+      $method: connect
+      $args:
+        - "dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=metabase"
+        - ~
+        - ~
+        - AutoCommit: 1
+          RaiseError: 1
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: legacy-metabase-conf
+  namespace: default
+data:
+  metabase-conf: |
+    {
+        db => {
+            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
+            username => undef,
+            password => undef,
+            args => {
+                limit_dialect => 'LimitXY',
+            },
+        },
+        beam_minion => {
+          mysql => {
+            dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
+            username => undef,
+            password => undef,
+          },
+        },
+    }
