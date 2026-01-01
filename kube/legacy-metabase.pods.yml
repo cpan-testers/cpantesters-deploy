@@ -1,17 +1,5 @@
 # This is the legacy metabase shim, hosted at `metabase.cpantesters.org`
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: metabase-tail-log
-spec:
-  accessModes:
-    - ReadWriteMany
-  storageClassName: longhorn
-  resources:
-    requests:
-      storage: 10Mi
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
