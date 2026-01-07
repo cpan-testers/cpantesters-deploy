@@ -57,6 +57,8 @@ spec:
               value: debug
             - name: MOJO_HOME
               value: /app
+            - name: MOJO_MODE
+              value: production
             - name: MOJO_CONFIG
               value: /etc/app/api.conf
             - name: MOJO_LOG_SHORT

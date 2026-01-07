@@ -186,6 +186,8 @@ spec:
                   value: debug
                 - name: MOJO_HOME
                   value: /data
+                - name: MOJO_MODE
+                  value: production
                 - name: MOJO_CONFIG
                   value: /etc/app/metabase.conf
                 - name: MOJO_LOG_SHORT

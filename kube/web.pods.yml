@@ -11,7 +11,7 @@ spec:
   selector:
     matchLabels:
       app: web
-  replicas: 4
+  replicas: 8
   template:
     metadata:
       annotations:
@@ -42,11 +42,19 @@ spec:
             - "30"
             - -H
             - "300"
+            - -a
+            - "100"
+            - -c
+            - "10"
+            - -b
+            - "10"
           env:
             - name: MOJO_LOG_LEVEL
               value: debug
             - name: MOJO_HOME
               value: /app
+            - name: MOJO_MODE
+              value: production
             - name: MOJO_CONFIG
               value: /etc/app/web.conf
             - name: MOJO_LOG_SHORT
