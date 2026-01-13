@@ -1,0 +1,91 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: collector-process-metabase
+  namespace: default
+spec:
+  backoffLimit: 4
+  completions: 4000
+  parallelism: 1
+  completionMode: Indexed
+  podReplacementPolicy: Failed
+  template:
+    spec:
+      tolerations:
+        - key: "reserved"
+          operator: "Equal"
+          value: "collector-process-metabase"
+          effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              # The current collector object storage is in lin-sea, so
+              # it is more efficient to also do batch processing from there.
+              - matchExpressions:
+                  - key: "topology.kubernetes.io/zone"
+                    operator: In
+                    values:
+                      - "lin-sea"
+
+      restartPolicy: OnFailure
+      volumes:
+        - name: conf-volume
+          configMap:
+            name: collector-conf
+            items:
+              - key: collector-conf
+                path: collector.conf
+        - name: collector-secret
+          secret:
+            secretName: collector-secret
+        - name: mysql-secret
+          secret:
+            secretName: mysql-secret
+      containers:
+        - name: process-metabase-dump
+          imagePullPolicy: Always
+          image: cpantesters/collector:latest
+          command:
+            - "bash"
+            - "-c"
+          args:
+            - perl script/collector process_metabase_dump --shard $(SHARD_INDEX)/4000 -j "35" 2>&1
+          resources:
+            requests:
+              cpu: 3000m
+              memory: 6G
+            limits:
+              cpu: 4000m
+          volumeMounts:
+            - mountPath: /etc/secrets
+              name: collector-secret
+              readOnly: true
+            - mountPath: /etc/app
+              name: conf-volume
+            - mountPath: /etc/mysql
+              name: mysql-secret
+              readOnly: true
+          env:
+            - name: SHARD_INDEX
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
+            - name: MOJO_LOG_LEVEL
+              value: info
+            - name: MOJO_HOME
+              value: /data
+            - name: MOJO_MODE
+              value: production
+            - name: MOJO_CONFIG
+              value: /etc/app/collector.conf
+            - name: MOJO_LOG_SHORT
+              value: "1"
+            - name: MOJO_INACTIVITY_TIMEOUT
+              value: "300"
+            - name: IO_ASYNC_LOOP
+              value: "Mojo"
+            - name: OTEL_SERVICE_NAME
+              value: "collector--process-metabase-dump"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://signoz-install-otel-collector.telemetry.svc:4318"

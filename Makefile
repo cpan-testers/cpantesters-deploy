@@ -65,11 +65,19 @@ docker-cpan:
 	docker build . -f Dockerfile.cpan --platform linux/amd64 --tag $$TAG >build-$$BUILD.log 2>&1 \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
-docker-all: docker-base docker-schema docker-backend docker-web docker-api docker-cpan
+docker-collector:
+	@BUILD="collector"; \
+	REPO="$$BUILD"; \
+	TAG="cpantesters/$$BUILD"; \
+	echo "Building repo $$REPO as $$TAG..."; \
+	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log 2>&1 \
+	    || echo "ERR: Build failed. See build-$$BUILD.log";
+
+docker-all: docker-base docker-schema docker-backend docker-web docker-api docker-cpan docker-collector
 
 publish:
 	@echo 'Publishing cpantesters to Docker Hub'
-	@for IMAGE in cpantesters/{base,schema,backend,api,web,cpan}; do docker push $$IMAGE; done
+	@for IMAGE in cpantesters/{base,schema,backend,api,web,cpan,collector}; do docker push $$IMAGE; done
 
 deploy:
 	# XXX: The only way to update config and secrets is to remove the entire stack and re-deploy it...

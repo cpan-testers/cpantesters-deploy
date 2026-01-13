@@ -1,0 +1,173 @@
+# This is the new raw storage service, the collector
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: collector-secret
+data:
+  linode_secret_key: aG5PYVdBeDM3Vzg4UUJaRE9acG5TRHVoZlR4dlF3RFJueTlqOVpFVAo=
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: collector-conf
+  namespace: default
+data:
+  collector-conf: |
+    use Mojo::File qw( path );
+    my $secret_access_key = path('/etc/secrets/linode_secret_key')->slurp =~ s/\s+//gr;
+    {
+      storage => {
+        S3 => {
+          endpoint => 'us-sea-9.linodeobjects.com',
+          region => 'US',
+          access_key_id => 'Z9G57Z9342TX0S32KMAW',
+          secret_access_key => $secret_access_key,
+          bucket => 'cpantesters-reports-v3',
+        },
+      },
+      db => {
+          dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/mysql/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
+          username => undef,
+          password => undef,
+          args => {
+              AutoInactiveDestroy => 1,
+              RaiseError => 1,
+          },
+      },
+      metabase_dump => {
+        S3 => {
+          endpoint => 'us-sea-9.linodeobjects.com',
+          region => 'US',
+          access_key_id => 'Z9G57Z9342TX0S32KMAW',
+          secret_access_key => $secret_access_key,
+          bucket => 'metabase-dump',
+        },
+      },
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collector
+  namespace: default
+  labels:
+    app: collector
+spec:
+  selector:
+    matchLabels:
+      app: collector
+  replicas: 2
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: collector
+      labels:
+        app: collector
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              preference:
+                # The current collector object storage is in lin-sea, so
+                # it is more efficient to also do batch processing from there.
+                matchExpressions:
+                  - key: "topology.kubernetes.io/zone"
+                    operator: In
+                    values:
+                      - "lin-sea"
+      volumes:
+        - name: conf-volume
+          configMap:
+            name: collector-conf
+            items:
+              - key: collector-conf
+                path: collector.conf
+        - name: collector-secret
+          secret:
+            secretName: collector-secret
+      containers:
+        - name: collector
+          image: cpantesters/collector:latest
+          command:
+            - script/collector
+            - prefork
+            - -w
+            - "2"
+            - -G
+            - "1500"
+            - -H
+            - "300"
+          env:
+            - name: MOJO_LOG_LEVEL
+              value: debug
+            - name: MOJO_HOME
+              value: /data
+            - name: MOJO_CONFIG
+              value: /etc/app/collector.conf
+            - name: MOJO_LOG_SHORT
+              value: "1"
+            - name: MOJO_INACTIVITY_TIMEOUT
+              value: "300"
+            - name: MOJO_HEARTBEAT_INTERVAL
+              value: "30"
+            - name: MOJO_PUBSUB_EXPERIMENTAL
+              value: "1"
+            - name: MOJO_MAX_MESSAGE_SIZE
+              value: "33554432" # approx 32M
+            - name: OTEL_SERVICE_NAME
+              value: "collector"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://signoz-install-otel-collector.telemetry.svc:4318"
+          volumeMounts:
+            - mountPath: /etc/app
+              name: conf-volume
+            - mountPath: /etc/secrets
+              name: collector-secret
+              readOnly: true
+          resources:
+            requests:
+              cpu: 0.01
+              memory: 250M
+            limits:
+              cpu: 0.5
+              memory: 750M
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collector
+  namespace: default
+spec:
+  selector:
+    app: collector
+  type: NodePort
+  ports:
+    - name: collector
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: collector
+  namespace: default
+spec:
+  rules:
+    - host: collector.cpantesters.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: collector
+                port:
+                  number: 80
