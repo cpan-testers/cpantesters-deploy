@@ -92,7 +92,7 @@ COPY ./dist /root/dist
 RUN --mount=type=cache,target=/root/.cpanm \
   bash -vlc 'for DIST in /root/dist/*; do \
         echo "Building pre-release: $DIST"; \
-        cpanm -v --notest $DIST; \
+        cpanm -v -f --notest $DIST; \
     done && rm -rf /root/dist'
 
 RUN mkdir /app
