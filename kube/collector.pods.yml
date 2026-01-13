@@ -93,6 +93,8 @@ spec:
         - name: collector
           image: cpantesters/collector:latest
           command:
+            - perl
+          args:
             - script/collector
             - prefork
             - -w
@@ -106,6 +108,8 @@ spec:
               value: debug
             - name: MOJO_HOME
               value: /data
+            - name: MOJO_MODE
+              value: production
             - name: MOJO_CONFIG
               value: /etc/app/collector.conf
             - name: MOJO_LOG_SHORT
