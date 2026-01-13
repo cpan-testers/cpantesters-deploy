@@ -126,3 +126,21 @@ list-cert:
 	@COMPOSE_FILE=docker-compose.yml:docker-compose.$(ENV).yml \
 	    docker-compose run certbot certificates
 
+minikube:
+	# NOTE: This is just me recording what I need to set up a minikube for development purposes
+	# Make sure we build images inside minikube's Docker
+	eval $(minikube -p minikube docker-env)
+
+	# Add opentelemetry for debugging
+	helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+	helm repo update
+	helm install opentelemetry-operator open-telemetry/opentelemetry-operator \
+		--set "manager.collectorImage.repository=ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s" \
+		--set admissionWebhooks.certManager.enabled=false \
+		--set admissionWebhooks.autoGenerateCert.enabled=true
+
+	kubectl apply -f kube-dev/
+	kubectl exec -i mysql-0 -- mysql --password=toortoor < var/schema/metabase-schema.sql
+	kubectl exec -i mysql-0 -- mysql --password=toortoor -e"GRANT ALL ON metabase.* TO 'cpantesters'@'%'"
+	kubectl exec -i mysql-0 -- mysql --password=toortoor -e"CREATE DATABASE webapp"
+	kubectl exec -i mysql-0 -- mysql --password=toortoor -e"GRANT ALL ON webapp.* TO 'cpantesters'@'%'"

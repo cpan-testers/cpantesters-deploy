@@ -37,7 +37,8 @@ group servers => qw(
   'nact-pdx-001.cpantesters.org',
 );
 group nodes => qw(
-  'osl-pdx-[001..002].cpantesters.org'
+  'osl-pdx-[001..002].cpantesters.org',
+  'lin-sea-[001..003].cpantesters.org',
 );
 
 #######################################################################
@@ -108,14 +109,6 @@ task prepare =>
                 group => 'root',
                 mode => '600', # u+rwx go-rwx
                 content => '%sudo ALL=(ALL:ALL) ALL',
-                ;
-
-            Rex::Logger::info( "Adding `cpantesters` to sudo" );
-            file '/etc/sudoers.d/cpantesters',
-                owner => 'root',
-                group => 'root',
-                mode => '600', # u+rwx go-rwx
-                content => "ALL ALL=(cpantesters) NOPASSWD: ALL\n%www-data ALL=(cpantesters) NOPASSWD: ALL",
                 ;
         };
     };

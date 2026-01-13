@@ -1,0 +1,72 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deploy-schema
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      volumes:
+        - name: mysql-secret
+          secret:
+            secretName: mysql-secret
+
+      containers:
+        - name: deploy-schema
+          image: cpantesters/schema:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - cpantesters-schema upgrade --dsn 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats'
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://signoz-install-otel-collector.telemetry.svc:4318"
+          volumeMounts:
+            - mountPath: /etc/secrets
+              name: mysql-secret
+              readOnly: true
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deploy-web
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      volumes:
+        - name: mysql-secret
+          secret:
+            secretName: mysql-secret
+        - name: conf-volume
+          configMap:
+            name: web-conf
+            items:
+              - key: web-conf
+                path: web.conf
+
+      containers:
+        - name: deploy-web
+          image: cpantesters/web:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - cpantesters-web schema upgrade
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://signoz-install-otel-collector.telemetry.svc:4318"
+            - name: MOJO_HOME
+              value: /app
+            - name: MOJO_CONFIG
+              value: /etc/app/web.conf
+          volumeMounts:
+            - mountPath: /etc/secrets
+              name: mysql-secret
+              readOnly: true
+            - mountPath: /etc/app
+              name: conf-volume
