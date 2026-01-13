@@ -88,11 +88,11 @@ spec:
               name: metabase-tail-log
           resources:
             requests:
-              cpu: 0.01
+              cpu: 0.025
               memory: 250M
             limits:
-              cpu: 0.5
-              memory: 750M
+              cpu: 0.1
+              memory: 500M
       restartPolicy: Always
 
 ---
@@ -168,7 +168,7 @@ spec:
                 - app->refresh_tail_log
               resources:
                 requests:
-                  cpu: 0.05
+                  cpu: 0.20
                   memory: 200M
                 limits:
                   cpu: 0.75
