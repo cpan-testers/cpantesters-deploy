@@ -6,11 +6,12 @@ ENV = dev
 DOCKER_CONTEXT = cpantesters-${ENV}
 STACK_NAME = cpantesters
 COMPOSE_FILE = swarm-compose.yml
+BUILDKIT_PROGRESS = plain
 
 API_PORT = 8000
 METABASE_PORT = 8250
 
-export API_PORT METABASE_PORT
+export API_PORT METABASE_PORT BUILDKIT_PROGRESS
 
 .PHONY: src docker docker-base docker-schema docker-backend docker-web docker-api \
     start stop compose connect data restart
@@ -22,7 +23,7 @@ src:
 
 docker-base:
 	@echo "Building base image as cpantesters/base..."
-	@docker build . --platform linux/amd64 --tag cpantesters/base >build-base.log \
+	@docker build . --platform linux/amd64 --tag cpantesters/base >build-base.log 2>&1 \
 	    || echo "ERR: Build failed. See build-base.log";
 
 docker-schema:
@@ -30,7 +31,7 @@ docker-schema:
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
 	echo "Building repo $$REPO as $$TAG..."; \
-	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
+	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log 2>&1 \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
 docker-backend:
@@ -38,7 +39,7 @@ docker-backend:
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
 	echo "Building repo $$REPO as $$TAG..."; \
-	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
+	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log 2>&1 \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
 docker-web:
@@ -46,7 +47,7 @@ docker-web:
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
 	echo "Building repo $$REPO as $$TAG..."; \
-	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
+	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log 2>&1 \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
 docker-api:
@@ -54,14 +55,14 @@ docker-api:
 	REPO="cpantesters-$$BUILD"; \
 	TAG="cpantesters/$$BUILD"; \
 	echo "Building repo $$REPO as $$TAG..."; \
-	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
+	docker build $(SRC_DIR)/$$REPO --platform linux/amd64 --tag $$TAG >build-$$BUILD.log 2>&1 \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
 docker-cpan:
 	@BUILD="cpan"; \
 	TAG="cpantesters/$$BUILD"; \
 	echo "Building $$TAG..."; \
-	docker build . -f Dockerfile.cpan --platform linux/amd64 --tag $$TAG >build-$$BUILD.log \
+	docker build . -f Dockerfile.cpan --platform linux/amd64 --tag $$TAG >build-$$BUILD.log 2>&1 \
 	    || echo "ERR: Build failed. See build-$$BUILD.log";
 
 docker-all: docker-base docker-schema docker-backend docker-web docker-api docker-cpan
