@@ -144,3 +144,6 @@ minikube:
 	kubectl exec -i mysql-0 -- mysql --password=toortoor -e"GRANT ALL ON metabase.* TO 'cpantesters'@'%'"
 	kubectl exec -i mysql-0 -- mysql --password=toortoor -e"CREATE DATABASE webapp"
 	kubectl exec -i mysql-0 -- mysql --password=toortoor -e"GRANT ALL ON webapp.* TO 'cpantesters'@'%'"
+
+update-object-storage-policy:
+	s3cmd setpolicy etc/linode/cpantesters-reports-v3.policy.json s3://cpantesters-reports-v3
