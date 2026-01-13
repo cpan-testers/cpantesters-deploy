@@ -58,6 +58,8 @@ spec:
               value: /etc/container
             - name: MOJO_LOG_LEVEL
               value: debug
+            - name: MOJO_MODE
+              value: production
             - name: MOJO_HOME
               value: /data
             - name: MOJO_CONFIG

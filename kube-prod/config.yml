@@ -126,4 +126,5 @@ data:
             password => undef,
           },
         },
+        collector => 'http://collector.default.svc',
     }

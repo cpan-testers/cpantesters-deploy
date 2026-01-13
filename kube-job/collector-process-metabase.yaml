@@ -72,7 +72,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
             - name: MOJO_LOG_LEVEL
-              value: info
+              value: debug
             - name: MOJO_HOME
               value: /data
             - name: MOJO_MODE
