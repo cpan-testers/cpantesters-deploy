@@ -50,11 +50,11 @@ spec:
             - "bash"
             - "-c"
           args:
-            - perl script/collector process_metabase_dump --shard $(SHARD_INDEX)/4000 -j "35" 2>&1
+            - perl script/collector process_metabase_dump --shard $(SHARD_INDEX)/4000 -j "30" 2>&1
           resources:
             requests:
               cpu: 3000m
-              memory: 6G
+              memory: 6.5G
             limits:
               cpu: 4000m
           volumeMounts:
@@ -72,7 +72,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
             - name: MOJO_LOG_LEVEL
-              value: debug
+              value: info
             - name: MOJO_HOME
               value: /data
             - name: MOJO_MODE
