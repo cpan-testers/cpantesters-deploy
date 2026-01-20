@@ -4,9 +4,9 @@ metadata:
   name: collector-process-metabase
   namespace: default
 spec:
-  backoffLimit: 4
+  backoffLimit: 1000
   completions: 4000
-  parallelism: 1
+  parallelism: 8
   completionMode: Indexed
   podReplacementPolicy: Failed
   template:
@@ -50,13 +50,13 @@ spec:
             - "bash"
             - "-c"
           args:
-            - perl script/collector process_metabase_dump --shard $(SHARD_INDEX)/4000 -j "30" 2>&1
+            - perl script/collector process_metabase_dump --shard $(SHARD_INDEX)/4000 -j "$WORKER_LIMIT" 2>&1
           resources:
             requests:
-              cpu: 3000m
-              memory: 6.5G
+              cpu: 1900m
+              memory: 3.5G
             limits:
-              cpu: 4000m
+              cpu: 2700m
           volumeMounts:
             - mountPath: /etc/secrets
               name: collector-secret
@@ -71,6 +71,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
+            - name: WORKER_LIMIT
+              value: "20"
+            - name: REPORT_MEMORY
+              value: "1"
             - name: MOJO_LOG_LEVEL
               value: info
             - name: MOJO_HOME
