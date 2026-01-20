@@ -60,6 +60,8 @@ spec:
               value: "backend"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://signoz-install-otel-collector.telemetry.svc:4318"
+            - name: COLLECTOR_URL
+              value: "http://collector.default.svc"
           volumeMounts:
             - mountPath: /etc/container
               name: container-volume
@@ -193,6 +195,8 @@ spec:
                   value: debug
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: "http://signoz-install-otel-collector.telemetry.svc:4318"
+                - name: COLLECTOR_URL
+                  value: "http://collector.default.svc"
               volumeMounts:
                 - mountPath: /etc/container
                   name: container-volume
