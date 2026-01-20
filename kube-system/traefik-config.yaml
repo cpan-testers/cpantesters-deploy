@@ -167,3 +167,4 @@ spec:
           headers:
             names:
               User-Agent: keep
+              X-Forwarded-For: keep
