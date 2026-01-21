@@ -11,7 +11,7 @@ spec:
   selector:
     matchLabels:
       app: legacy-metabase
-  replicas: 2
+  replicas: 4
   template:
     metadata:
       annotations:
@@ -90,11 +90,11 @@ spec:
               name: metabase-tail-log
           resources:
             requests:
-              cpu: 0.025
-              memory: 250M
-            limits:
-              cpu: 0.1
+              cpu: 200m
               memory: 500M
+            limits:
+              cpu: 500m
+              memory: 750M
       restartPolicy: Always
 
 ---

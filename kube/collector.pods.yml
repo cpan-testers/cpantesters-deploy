@@ -59,7 +59,7 @@ spec:
   selector:
     matchLabels:
       app: collector
-  replicas: 2
+  replicas: 4
   template:
     metadata:
       annotations:

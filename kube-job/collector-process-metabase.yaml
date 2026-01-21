@@ -6,7 +6,7 @@ metadata:
 spec:
   backoffLimit: 1000
   completions: 4000
-  parallelism: 8
+  parallelism: 4
   completionMode: Indexed
   podReplacementPolicy: Failed
   template:
@@ -53,10 +53,8 @@ spec:
             - perl script/collector process_metabase_dump --shard $(SHARD_INDEX)/4000 -j "$WORKER_LIMIT" 2>&1
           resources:
             requests:
-              cpu: 1900m
-              memory: 3.5G
-            limits:
-              cpu: 2700m
+              cpu: 3000m
+              memory: 6G
           volumeMounts:
             - mountPath: /etc/secrets
               name: collector-secret
@@ -72,7 +70,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
             - name: WORKER_LIMIT
-              value: "20"
+              value: "25"
             - name: REPORT_MEMORY
               value: "1"
             - name: MOJO_LOG_LEVEL
