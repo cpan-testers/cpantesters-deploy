@@ -86,10 +86,9 @@ spec:
           resources:
             requests:
               cpu: 0.1
-              memory: 300M
+              memory: 500M
             limits:
               cpu: 0.5
-              memory: 350M
       restartPolicy: Always
 ---
 apiVersion: v1

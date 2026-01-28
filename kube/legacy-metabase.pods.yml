@@ -91,10 +91,10 @@ spec:
           resources:
             requests:
               cpu: 200m
-              memory: 500M
+              memory: 1G
             limits:
               cpu: 500m
-              memory: 750M
+              memory: 1.5G
       restartPolicy: Always
 
 ---
