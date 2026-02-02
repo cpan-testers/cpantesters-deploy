@@ -9,12 +9,27 @@ metadata:
   name: signoz-install
   namespace: kube-system
 spec:
-  version: 0.104.1
+  version: 0.110.0
   chart: signoz
   repo: https://charts.signoz.io
   failurePolicy: abort
   targetNamespace: telemetry
   createNamespace: true
+  valuesContent: |-
+    signoz:
+      livenessProbe:
+        enabled: true
+        port: http
+        path: /api/v1/health
+        initialDelaySeconds: 60
+        periodSeconds: 30
+        timeoutSeconds: 30
+        failureThreshold: 10
+        successThreshold: 1
+      env:
+        SIGNOZ_SQLSTORE_SQLITE_MODE:
+          value: wal
+
 ---
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
