@@ -212,3 +212,71 @@ spec:
                 limits:
                   cpu: 1
                   memory: 600M
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backend-update-release-data
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: container-volume
+              configMap:
+                name: container
+                items:
+                  - key: db
+                    path: db.yml
+                  - key: log
+                    path: log.yml
+            - name: etc-volume
+              configMap:
+                name: etc
+                items:
+                  - key: beam-minion
+                    path: beam-minion.yml
+            - name: mysql-secret
+              secret:
+                secretName: mysql-secret
+
+          containers:
+            - name: backend
+              image: cpantesters/backend:latest
+              command:
+                - /bin/bash
+                - -c
+              args:
+                - beam run report update_release_data
+              env:
+                - name: BEAM_MINION
+                  value: file:///etc/minion/beam-minion.yml
+                - name: BEAM_PATH
+                  value: /etc/container:/app/etc/container
+                - name: MOJO_LOG_LEVEL
+                  value: debug
+                - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                  value: "http://signoz-install-otel-collector.telemetry.svc:4318"
+                - name: COLLECTOR_URL
+                  value: "http://collector.default.svc"
+              volumeMounts:
+                - mountPath: /etc/container
+                  name: container-volume
+                - mountPath: /etc/minion
+                  name: etc-volume
+                - mountPath: /etc/secrets
+                  name: mysql-secret
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 0.1
+                  memory: 450M
+                limits:
+                  cpu: 0.5
+                  memory: 600M
