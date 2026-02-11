@@ -196,3 +196,76 @@ spec:
                   value: "1"
                 - name: MOJO_INACTIVITY_TIMEOUT
                   value: "300"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metabase-tail-log-http
+  namespace: default
+  labels:
+    app: metabase-tail-log-http
+spec:
+  selector:
+    matchLabels:
+      app: metabase-tail-log-http
+  replicas: 2
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: nginx
+      labels:
+        app: metabase-tail-log-http
+    spec:
+      restartPolicy: Always
+      volumes:
+        - name: metabase-tail-log
+          persistentVolumeClaim:
+            claimName: metabase-tail-log
+
+      containers:
+        - name: nginx
+          image: nginx:mainline-alpine
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html/tail
+              name: metabase-tail-log
+              readOnly: true
+          resources:
+            requests:
+              cpu: 0.01
+              memory: 150M
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metabase-tail-log
+  namespace: default
+spec:
+  selector:
+    app: metabase-tail-log-http
+  type: NodePort
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: metabase-tail-log
+  namespace: default
+spec:
+  rules:
+    - host: metabase.cpantesters.org
+      http:
+        paths:
+          - path: /tail/log.txt
+            pathType: Exact
+            backend:
+              service:
+                name: metabase-tail-log
+                port:
+                  number: 80
