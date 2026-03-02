@@ -91,7 +91,7 @@ spec:
               memory: 200M
             limits:
               cpu: 1
-              memory: 250M
+              memory: 350M
           env:
             - name: RSYNC_PASSWORD
               valueFrom:

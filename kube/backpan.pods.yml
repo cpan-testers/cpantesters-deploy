@@ -19,7 +19,7 @@ spec:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: backpan-index
+  name: backpan-index-create
   namespace: cpan
 spec:
   schedule: "0 */8 * * *"
@@ -38,7 +38,7 @@ spec:
               persistentVolumeClaim:
                 claimName: backpan-volume
           containers:
-            - name: build-backpan-index
+            - name: build-backpan-index-create
               image: cpantesters/cpan:latest
               command:
                 - sh
@@ -48,6 +48,40 @@ spec:
                   name: cpan-volume
                 - mountPath: /data/BACKPAN
                   name: backpan-volume
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backpan-index
+  namespace: cpan
+spec:
+  # Start after bin/backpan.sh has rsynced, hopefully
+  schedule: "45 */8 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: backpan-volume
+              persistentVolumeClaim:
+                claimName: backpan-volume
+          containers:
+            - name: build-backpan-index
+              image: cpantesters/cpan:latest
+              command:
+                - perl
+              args:
+                - /app/backpan-index.pl
+                - /data/BACKPAN
+                - /data/BACKPAN/backpan-index.gz
+              volumeMounts:
+                - mountPath: /data/BACKPAN
+                  name: backpan-volume
+
 ---
 apiVersion: apps/v1
 kind: Deployment

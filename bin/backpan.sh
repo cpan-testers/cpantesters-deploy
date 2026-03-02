@@ -11,7 +11,7 @@ echo $(date +"$date_format") "copying files from CPAN to BACKPAN"
 mkdir -p $BACKPAN/authors/id
 rsync --exclude CHECKSUMS -vrptgx $CPAN/authors/id/ $BACKPAN/authors/id/ 2>&1
 
-echo $(date +"$date_format") "creating BACKPAN indices"
+echo $(date +"$date_format") "creating BACKPAN indices (BackPAN::Index::Create)"
 TMP=$(mktemp -d)
 cd $TMP
 create-backpan-index -b=$BACKPAN -o=backpan-full-index.txt

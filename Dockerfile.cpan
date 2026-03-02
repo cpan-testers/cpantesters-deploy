@@ -17,10 +17,15 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
 RUN cpanm --notest \
   JSON \
   File::Rsync::Mirror::Recent \
-  BackPAN::Index::Create
+  BackPAN::Index::Create \
+  IO::Zlib Path::Tiny File::Find::Rule
 RUN mkdir /app
 RUN mkdir /data
 ADD bin/backpan.sh /app/backpan.sh
+# This one is for BackPAN::Index (not BackPAN::Index::Create)
+# None of the dist modules are needed, though, since it's just a
+# gzipped list of all the files in the BackPAN.
+ADD bin/backpan-index.pl /app/backpan-index.pl
 
 ENV SRC=cpan-rsync-master.perl.org
 ENV USER=barbie
