@@ -145,8 +145,8 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
-          # Mark as failed after 3 minutes so the next run can try again
-          activeDeadlineSeconds: 180
+          # Mark as failed after 5 minutes so the next run can try again
+          activeDeadlineSeconds: 300
           volumes:
             - name: conf-volume
               configMap:
