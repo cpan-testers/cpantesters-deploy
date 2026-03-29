@@ -71,7 +71,8 @@ RUN --mount=type=cache,target=/root/.cpanm \
     OpenTelemetry::SDK \
     Mojolicious::Plugin::OpenTelemetry \
     Log::Any::Adapter::OpenTelemetry \
-    IO::Async::Loop::Mojo
+    IO::Async::Loop::Mojo \
+    CHI CHI::Driver::Redis
 
 RUN --mount=type=cache,target=/root/.cpanm \
   cpanm --notest \

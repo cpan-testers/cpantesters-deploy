@@ -1,0 +1,18 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  annotations:
+    helmcharts.cattle.io/managed-by: helm-controller
+  finalizers:
+    - wrangler.cattle.io/on-helm-chart-remove
+  generation: 1
+  name: redis
+  namespace: kube-system
+spec:
+  version: 0.26.8
+  chart: oci://registry-1.docker.io/cloudpirates/redis
+  failurePolicy: abort
+  targetNamespace: redis-system
+  createNamespace: true
+  set:
+    persistence.storageClass: longhorn

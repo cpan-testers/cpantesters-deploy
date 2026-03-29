@@ -6,6 +6,7 @@ metadata:
   namespace: default
 data:
   api-conf: |
+    use Mojo::File qw( path );
     {
         db => {
             dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/secrets/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
@@ -23,6 +24,14 @@ data:
           },
         },
         collector => 'http://collector.default.svc',
+        cache => {
+          driver => 'Redis',
+          redis_options => {
+            # This all comes from the 'redis' secret in 'redis-system' namespace
+            server => 'redis.redis-system.svc:6379',
+            password => 'oDmKtV0IcXeHi1ol',
+          },
+        },
     }
 ---
 apiVersion: v1

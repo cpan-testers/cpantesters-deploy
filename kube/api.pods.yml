@@ -123,3 +123,26 @@ spec:
                 name: api
                 port:
                   number: 80
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: api-precache
+spec:
+  schedule: "30 */2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: precache
+              image: cpantesters/base:latest
+              command:
+                - /bin/bash
+                - -c
+              args:
+                - curl http://api.default.svc/v3/release?precache=1
