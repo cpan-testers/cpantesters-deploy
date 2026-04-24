@@ -6,6 +6,7 @@ metadata:
   name: collector-secret
 data:
   linode_secret_key: aG5PYVdBeDM3Vzg4UUJaRE9acG5TRHVoZlR4dlF3RFJueTlqOVpFVAo=
+  netactuate_secret_key: emE4cXBTZmh2TEN5RWhoaU5iNXRUZmpqUDRKbXdKM3NnTmtHUUxSNgo=
 
 ---
 apiVersion: v1
@@ -16,17 +17,25 @@ metadata:
 data:
   collector-conf: |
     use Mojo::File qw( path );
-    my $secret_access_key = path('/etc/secrets/linode_secret_key')->slurp =~ s/\s+//gr;
+    my $linode_secret_key = path('/etc/secrets/linode_secret_key')->slurp =~ s/\s+//gr;
+    my $netactuate_secret_key = path('/etc/secrets/netactuate_secret_key')->slurp =~ s/\s+//gr;
     {
-      storage => {
+      storage => [
         S3 => {
           endpoint => 'us-sea-9.linodeobjects.com',
           region => 'US',
           access_key_id => 'Z9G57Z9342TX0S32KMAW',
-          secret_access_key => $secret_access_key,
+          secret_access_key => $linode_secret_key,
           bucket => 'cpantesters-reports-v3',
         },
-      },
+        S3 => {
+          endpoint => 'silo.netactuate.com',
+          region => 'US',
+          access_key_id => 'E40RQBMDXWS55K78ZTRL',
+          secret_access_key => $netactuate_secret_key,
+          bucket => 'cpantesters-reports-v3',
+        },
+      ],
       db => {
           dsn => 'dbi:MariaDB:mariadb_read_default_file=/etc/mysql/mysql_cnf;mariadb_read_default_group=backend;database=cpanstats',
           username => undef,
@@ -41,7 +50,7 @@ data:
           endpoint => 'us-sea-9.linodeobjects.com',
           region => 'US',
           access_key_id => 'Z9G57Z9342TX0S32KMAW',
-          secret_access_key => $secret_access_key,
+          secret_access_key => $linode_secret_key,
           bucket => 'metabase-dump',
         },
       },
