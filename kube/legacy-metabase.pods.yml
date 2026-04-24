@@ -137,7 +137,7 @@ kind: CronJob
 metadata:
   name: metabase-tail-log
 spec:
-  schedule: "*/5 * * * *"
+  schedule: "*/10 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   jobTemplate:
@@ -145,8 +145,8 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
-          # Mark as failed after 5 minutes so the next run can try again
-          activeDeadlineSeconds: 300
+          # Mark as failed after 9 minutes so the next run can try again
+          activeDeadlineSeconds: 540
           volumes:
             - name: conf-volume
               configMap:
