@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: backpan-sync-from-perl-org
+  namespace: cpan
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      volumes:
+        - name: backpan-volume
+          persistentVolumeClaim:
+            claimName: backpan-volume
+
+      containers:
+        - name: backpan-sync
+          image: cpantesters/cpan:latest
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |-
+              wget -m -c --no-verbose --no-host-directories \
+                --directory-prefix /data/BACKPAN \
+                --compression auto -D backpan.perl.org \
+                --no-parent \
+                https://backpan.perl.org/authors/id/ \
+                ;
+              find /data/BACKPAN -name 'index.html*' -delete
+          volumeMounts:
+            - mountPath: /data/BACKPAN
+              name: backpan-volume
